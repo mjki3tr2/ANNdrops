@@ -4,7 +4,8 @@ from prep_data import prep_data
 from scale import scale
 from predict_and_inverse import predict_and_inverse
 from calc_d32 import calc_d32
-from optimise_model import optimise_model
+from optimise_parameters import optimise_parameters
+from train_model import train_model
 from plot_outputs import plot_outputs
 from plot_training_history import plot_training_history
 
@@ -77,8 +78,13 @@ Xd32_data, Xd32_test, yd32_data, yd32_test, idx_d32_data, idx_d32_test = train_t
 
 ## undertake optimisation of the model for the volume fraction
 print("Running d32 Optimisation")
-final_model_d32, history_d32_final, d32_info = optimise_model(Xd32_data,yd32_data,Xd32_test,yd32_test,space_model,'linear',n_runs,num_optimise,num_initial,n_splits)
+d32_info = optimise_parameters(Xd32_data,yd32_data,Xd32_test,yd32_test,space_model,'linear',n_runs,num_optimise,num_initial,n_splits)
+final_model_d32, history_d32_final = train_model(Xd32_data,yd32_data,Xd32_test,yd32_test,'linear',d32_info)
 final_model_d32.save("d32_model.keras")
+
+# look at the model
+final_model_d32.summary()
+plot_model(final_model_d32, to_file='plots/model_d32.png', show_shapes=True, show_layer_names=True)
 
 # plot the training history graph
 plot_training_history(history_d32_final, title=r'$d_{32}$ Model Training History',save_path='plots/d32_model_training.png')
@@ -91,6 +97,3 @@ yd32_test = np.exp(scaler_y_d32.inverse_transform(yd32_test))
 
 # plot the fraction output values
 plot_outputs(yd32_data,yd32_test,yd32_pred_data,yd32_pred_test,idx_d32_data,idx_d32_test,r'Plot for $d_{32}$',log=True, maerun=False, save_path='plots/d32model.png')
-
-final_model_d32.summary()
-plot_model(final_model_d32, to_file='plots/model_d32.png', show_shapes=True, show_layer_names=True,rankdir='TB',dpi=600)
