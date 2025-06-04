@@ -1,5 +1,9 @@
-def plot_outputs(y_true_train,y_true_valid,y_true_test,y_pred_train,y_pred_valid,y_pred_test,idx_f_train,idx_f_valid,idx_f_test,title,
+def plot_outputs(y_true_data,y_true_test,
+                     y_pred_data,y_pred_test,
+                     idx_f_data,idx_f_test,
+                     title,
                      log=True, maerun=False,
+                     x_min=None, x_max=None,
                      save_path=None):
     
     import numpy as np
@@ -8,8 +12,8 @@ def plot_outputs(y_true_train,y_true_valid,y_true_test,y_pred_train,y_pred_valid
     import os
     
     # Combine all true and predicted values
-    y_true_all = np.concatenate([y_true_train, y_true_valid, y_true_test])
-    y_pred_all = np.concatenate([y_pred_train, y_pred_valid, y_pred_test])
+    y_true_all = np.concatenate([y_true_data, y_true_test])
+    y_pred_all = np.concatenate([y_pred_data, y_pred_test])
     
     if maerun:
         # For each point, compute error% = |(true - pred)/true|
@@ -21,19 +25,20 @@ def plot_outputs(y_true_train,y_true_valid,y_true_test,y_pred_train,y_pred_valid
     r2 = r2_score(y_true_all,y_pred_all)
     
     # Determine the full range for plotting from the combined true values.
-    x_min = y_true_all.min()
-    x_max = y_true_all.max()
+    if (not x_min):
+        x_min = y_true_all.min()
+    if (not x_max):
+        x_max = y_true_all.max()
     x_line = np.linspace(x_min, x_max, 100)
     
     plt.rcParams.update({'font.size': 14})
     fig, ax = plt.subplots(figsize=(8,8))
     
-    ax.scatter(y_true_train, y_pred_train, c='blue', label='Train', alpha=0.7, edgecolors='k')
-    ax.scatter(y_true_valid, y_pred_valid, c='green', label='Valid', alpha=0.7, edgecolors='k')
+    ax.scatter(y_true_data, y_pred_data, c='blue', label='Train', alpha=0.7, edgecolors='k')
     ax.scatter(y_true_test, y_pred_test, c='orange', label='Test', alpha=0.7, edgecolors='k')
     
     # Plot the ideal parity line: y=x.
-    ax.plot([x_min, x_max], [x_min, x_max], 'r--', label="Ideal: y=x")
+    ax.plot(x_line, x_line, 'r--', label="Ideal: y=x")
     
     if maerun:
         error_threshold = 0.1
@@ -46,7 +51,6 @@ def plot_outputs(y_true_train,y_true_valid,y_true_test,y_pred_train,y_pred_valid
         ax.plot(x_line, (1 + error_threshold)*x_line, 'g--', label ='20% Error')
         ax.plot(x_line, (1 - error_threshold)*x_line, 'g--')
     
-    
     # Annotate outliers in the test set
     for i, idx in enumerate(idx_f_test):
         if maerun:
@@ -56,21 +60,13 @@ def plot_outputs(y_true_train,y_true_valid,y_true_test,y_pred_train,y_pred_valid
         if error > error_threshold:
             ax.annotate(str(int(idx)), (y_true_test[i], y_pred_test[i]), fontsize=8, color='red')
     
-    for i, idx in enumerate(idx_f_valid):
+    for i, idx in enumerate(idx_f_data):
         if maerun:
-            error = abs(y_true_valid[i] - y_pred_valid[i])
+            error = abs(y_true_data[i] - y_pred_data[i])
         else:
-            error = abs(y_true_valid[i] - y_pred_valid[i])/y_true_valid[i]
+            error = abs(y_true_data[i] - y_pred_data[i])/y_true_data[i]
         if error > error_threshold:
-            ax.annotate(str(int(idx)), (y_true_valid[i], y_pred_valid[i]), fontsize=8, color='red')
-    
-    for i, idx in enumerate(idx_f_train):
-        if maerun:
-            error = abs(y_true_train[i] - y_pred_train[i])
-        else:
-            error = abs(y_true_train[i] - y_pred_train[i])/y_true_train[i]
-        if error > error_threshold:
-            ax.annotate(str(int(idx)), (y_true_train[i], y_pred_train[i]), fontsize=8, color='red')
+            ax.annotate(str(int(idx)), (y_true_data[i], y_pred_data[i]), fontsize=8, color='red')
     
     if maerun:
         ax.text(0.05, 0.95, f'Avg MAE: {mae_mean:.3f}\nR² Score: {r2:.4f}', transform=ax.transAxes, verticalalignment='top', bbox=dict(facecolor='white', alpha=0.5))
@@ -85,6 +81,8 @@ def plot_outputs(y_true_train,y_true_valid,y_true_test,y_pred_train,y_pred_valid
     ax.set_title(title)
     ax.legend()
     ax.grid(True)
+    ax.set_xlim(x_min, x_max)
+    ax.set_ylim(x_min, x_max)
     
     if save_path:
         os.makedirs(os.path.dirname(save_path), exist_ok=True)

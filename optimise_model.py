@@ -1,4 +1,8 @@
-def optimise_model(x_train,y_train,x_valid,y_valid,x_test,y_test,space_model,final_activation,n_runs,num_op,num_initial):
+from sklearn.model_selection import KFold
+
+def optimise_model(x_data,y_data,x_test,y_test,
+                    space_model,final_activation,
+                    n_runs,num_op,num_initial,n_splits=5):
     
     from sklearn.metrics import mean_absolute_error
     from skopt import gp_minimize
@@ -14,6 +18,7 @@ def optimise_model(x_train,y_train,x_valid,y_valid,x_test,y_test,space_model,fin
     
     from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping
     from skopt.space import Real, Integer
+    import skopt.utils as sku
 
     lr_scheduler = ReduceLROnPlateau(
         monitor='val_loss',
@@ -41,26 +46,26 @@ def optimise_model(x_train,y_train,x_valid,y_valid,x_test,y_test,space_model,fin
         use_normalized_relu=True
     
     # Plots a graph of the minimisation progress
-    def plot_gp_progress(all_runs):
-        plt.rcParams.update({'font.size': 14})
-        fig, ax = plt.subplots(figsize=(10, 6))
-        
-        for i, result in enumerate(all_runs):
-            ax.plot(result.func_vals, label=f'Run {i+1}')
-        
-        ax.set_xlabel('Iteration')
-        ax.set_ylabel('Objective Value')
-        ax.set_yscale('log')
-        ax.set_title('GP Minimization Progress Across Runs')
-        ax.legend()
-        ax.grid(True)
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"plots/gp_mini_{timestamp}.png"
-        os.makedirs(os.path.dirname(filename), exist_ok=True)
-        fig.savefig(filename, dpi=600, bbox_inches='tight')
-        print(f"Plot saved to {filename}")
-        plt.show()
-        plt.close()
+    #def plot_gp_progress(all_runs):
+    #    plt.rcParams.update({'font.size': 14})
+    #    fig, ax = plt.subplots(figsize=(10, 6))
+    #    
+    #    for i, result in enumerate(all_runs):
+    #        ax.plot(result.func_vals, label=f'Run {i+1}')
+    #    
+    #    ax.set_xlabel('Iteration')
+    #    ax.set_ylabel('Objective Value')
+    #    ax.set_yscale('log')
+    #    ax.set_title('GP Minimization Progress Across Runs')
+    #    ax.legend()
+    #    ax.grid(True)
+    #    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    #    filename = f"plots/gp_mini_{timestamp}.png"
+    #    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    #    fig.savefig(filename, dpi=600, bbox_inches='tight')
+    #    print(f"Plot saved to {filename}")
+    #    plt.show()
+    #    plt.close()
     
     #Builds a layered model, that can be tapered, with a minimum of 8 units per layer.
     def tapered_layers(base_units, taper_rate, num_layers=3, min_units=8):
@@ -69,72 +74,80 @@ def optimise_model(x_train,y_train,x_valid,y_valid,x_test,y_test,space_model,fin
     def print_progress(res):
         print(f"[{len(res.x_iters)}/{num_op}] Step completed.")
     
-    import skopt.utils as sku
+    kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
+    
     @sku.use_named_args(dimensions=space_model)
     def objective(lr, epochs, layers, hidden_units, taper_rate, dropout_rate, l2_factor):
+        val_losses = []
+        val_r2s = []
         try:
-            # Clear previous session to free memory
-            K.clear_session()
+            for train_idx, val_idx in kf.split(x_data):
+                # Clear previous session to free memory
+                K.clear_session()
+                
+                x_train, x_valid = x_data[train_idx], x_data[val_idx]
+                y_train, y_valid = y_data[train_idx], y_data[val_idx]
+                
+                
+                model = build_model(
+                    input_dim=x_train.shape[1],
+                    hidden_units = tapered_layers(hidden_units, taper_rate, layers),
+                    #activation='relu',
+                    lr=lr,
+                    use_adjusted_softmax=use_adjusted_softmax,
+                    use_threshold_activation=use_threshold_activation,
+                    use_normalized_relu=use_normalized_relu,
+                    final_activation=final_activation,
+                    dropout_rate=dropout_rate,
+                    l2_factor=l2_factor,
+                    output_width=y_train.shape[1]
+                )
+                
+                # Train the model using the training set and evaluate on the validation set.
+                history_optimise = model.fit(
+                    x_train, y_train,
+                    validation_data=(x_valid, y_valid),
+                    epochs=epochs,
+                    batch_size=32,
+                    callbacks=[early_stop],
+                    verbose=0 # set to 0 for tuning so that training output isn't printed each time
+                )
             
-            # Build the volume fraction model using the hyperparameters.
-            from sklearn.metrics import r2_score
-            from build_model import build_model
+                # Evaluate the model on the validation set (taking an average on the last 10 points).
+                #train_loss = np.mean(history_optimise.history['loss'][-20:])
+                val_loss = np.mean(history_optimise.history['val_loss'][-20:])
+                val_losses.append(val_loss)
+                
+                #loss_var = np.var(history_optimise.history['val_loss'][-20:])
+                #loss_var_frac = loss_var/val_loss
+                
+                # Compute the penalty for the difference between train and val loss
+                #lambda_diff = 0.5 # Weight on the |train_loss - val_lossss| term
+                #penalty_diff = lambda_diff * max(0.0, train_loss - val_loss)
+                
+                # Compute the penalty for the smoothness of the loss
+                #lambda_var = 1.0 # weight on the var
+                #penalty_var = lambda_var * loss_var_frac
+                
+                # Compute R^2 on the validation set.
+                y_pred = model.predict(x_valid)
+                r2 = r2_score(y_valid,y_pred)
+                val_r2s.append(r2)
             
-            #hidden_units_int = int(hidden_units)
+            avg_val_loss = np.mean(val_losses)
+            avg_r2 = np.mean(val_r2s)
             
-            model = build_model(
-                input_dim=x_train.shape[1],
-                hidden_units = tapered_layers(hidden_units, taper_rate, layers),
-                #activation='relu',
-                lr=lr,
-                use_adjusted_softmax=use_adjusted_softmax,
-                use_threshold_activation=use_threshold_activation,
-                use_normalized_relu=use_normalized_relu,
-                final_activation=final_activation,
-                dropout_rate=dropout_rate,
-                l2_factor=l2_factor,
-                output_width=y_train.shape[1]
-            )
-            
-            # Train the model using the training set and evaluate on the validation set.
-            history_optimise = model.fit(
-                x_train, y_train,
-                validation_data=(x_valid, y_valid),
-                epochs=epochs,
-                batch_size=32,
-                callbacks=[early_stop],
-                verbose=0 # set to 0 for tuning so that training output isn't printed each time
-            )
-            
-            # Evaluate the model on the validation set (taking an average on the last 10 points).
-            train_loss = np.mean(history_optimise.history['loss'][-20:])
-            val_loss = np.mean(history_optimise.history['val_loss'][-20:])
-            
-            loss_var = np.var(history_optimise.history['val_loss'][-20:])
-            loss_var_frac = loss_var/val_loss
-            
-            # Compute the penalty for the difference between train and val loss
-            lambda_diff = 0.5 # Weight on the |train_loss - val_lossss| term
-            penalty_diff = lambda_diff * max(0.0, train_loss - val_loss)
-            
-            # Compute the penalty for the smoothness of the loss
-            lambda_var = 1.0 # weight on the var
-            penalty_var = lambda_var * loss_var_frac
-            
-            # Compute R^2 on the validation set.
-            y_pred = model.predict(x_valid)
-            r2 = r2_score(y_valid,y_pred)
             # Set a lambda (penalty weight) for combining metrics.
             lambda_r2 = 2.0 # Weight on the (1-R^2) term
             r2_threshold=0.85
-            penalty_r2 = lambda_r2 * max(0.0,(r2_threshold - r2))
+            penalty_r2 = lambda_r2 * max(0.0,(r2_threshold - avg_r2))
             
             # Overall objective: lower is better, we want low loss and high R2.
-            objective_value = val_loss + penalty_r2 + penalty_diff + penalty_var
+            objective_value = avg_val_loss + penalty_r2 #+ penalty_diff + penalty_var
             
             print(f"Evaluated: lr = {lr:.2e}, epochs = {epochs}, layers = {layers}, hidden units = {hidden_units},")
             print(f"           taper rate = {taper_rate:.3f}, dropout rate = {dropout_rate:.3f}")
-            print(f"    => val loss = {val_loss:.4e}, R2 = {r2:.4f}, objective = {objective_value:.4e}")
+            print(f"    => val loss = {avg_val_loss:.4e}, R2 = {avg_r2:.4f}, objective = {objective_value:.4e}")
             
             # Return the validation loss as the objective.
             return objective_value
@@ -154,7 +167,6 @@ def optimise_model(x_train,y_train,x_valid,y_valid,x_test,y_test,space_model,fin
             K.clear_session()
     
     
-    #all_runs = []
     res_out = None
     best_fun = float("inf")
     for i in range(n_runs):
@@ -175,16 +187,11 @@ def optimise_model(x_train,y_train,x_valid,y_valid,x_test,y_test,space_model,fin
             callback=[print_progress]
         )
         
-        #all_runs.append(result)
         # for the cluseter, memory saving to just save the best run not all the runs.
         if result.fun < best_fun:
             res_out = result
             best_fun = result.fun
     
-    #plot_gp_progress(all_runs)
-    
-    #res_out = min(all_runs, key=lambda r: r.fun)
-
     # Now once we have the best hyperparameters, we can rebuild the final model with these values
     best_lr, best_epochs, best_layers, best_hidden_units, best_taper_rate, best_dropout, best_l2 = res_out.x
     print(f"Evaluated: lr = {best_lr:.2e}, epochs = {best_epochs}, layers = {best_layers}, hidden units = {best_hidden_units},")
@@ -200,7 +207,7 @@ def optimise_model(x_train,y_train,x_valid,y_valid,x_test,y_test,space_model,fin
     
     # Buld the final model using the best hyperparameters:
     final_model = build_model(
-        input_dim=x_train.shape[1],
+        input_dim=x_data.shape[1],
         hidden_units = tapered_layers(best_hidden_units, best_taper_rate, best_layers),
         #activation='relu',
         lr=best_lr,
@@ -210,24 +217,12 @@ def optimise_model(x_train,y_train,x_valid,y_valid,x_test,y_test,space_model,fin
         final_activation=final_activation,
         dropout_rate=best_dropout,
         l2_factor=best_l2,
-        output_width=y_train.shape[1]
+        output_width=y_data.shape[1]
     )
     
     history_final = final_model.fit(
-        x_train, y_train,
-        validation_data=(x_valid,y_valid),
-        epochs=best_epochs,
-        batch_size=32,
-        #callbacks=[lr_scheduler],
-        verbose=1
-    )
-    
-    # Combine training and validation sets for final training.
-    x_trainval = np.concatenate((x_train, x_valid), axis=0)
-    y_trainval = np.concatenate((y_train, y_valid), axis=0)
-    
-    combined_history_final = final_model.fit(
-        x_trainval, y_trainval,
+        x_data, y_data,
+        validation_split=0.1,
         epochs=best_epochs,
         batch_size=32,
         callbacks=[lr_scheduler],
@@ -240,4 +235,4 @@ def optimise_model(x_train,y_train,x_valid,y_valid,x_test,y_test,space_model,fin
     final_r2 = r2_score(y_test, y_pred_test)
     print(f"Final Test MAE: {final_mae:.4f}, R2: {final_r2:.4f}")
     
-    return final_model, history_final, combined_history_final, res_out
+    return final_model, history_final, res_out
