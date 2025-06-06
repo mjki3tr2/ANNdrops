@@ -37,8 +37,8 @@ test_fraction = 0.1
 #'normalized_relu' - make sure the sum is 1 by normalisation
 
 n_runs = 1 # minimisation loops
-num_optimise = 5 # number of minimisaion steps
-num_initial = 2 # number of initial mapping guesses
+num_optimise = 70 # number of minimisaion steps
+num_initial = 20 # number of initial mapping guesses
 n_splits = 5 # number of K-fold sections
 space_model = [
     Real(1e-5, 1e-2,name='lr', prior='log-uniform'),
@@ -108,8 +108,8 @@ if run_f:
     
     # undertake optimisation of the model for the volume fraction
     print("Running Volume Fraction Optimisation")
-    volfrac_info = optimise_parameters(Xf_data,yf_data,Xf_test,yf_test,space_model,'normalized_relu',n_runs,num_optimise,num_initial,n_splits)
-    final_model_f, history_volfrac_final = train_model(Xf_data,yf_data,Xf_test,yf_test,'normalized_relu',volfrac_info)
+    volfrac_info = optimise_parameters(Xf_data,yf_data,Xf_test,yf_test,space_model,'softmax',n_runs,num_optimise,num_initial,n_splits)
+    final_model_f, history_volfrac_final = train_model(Xf_data,yf_data,Xf_test,yf_test,'softmax',volfrac_info)
     final_model_f.save("volume_fraction_model.keras")
     
     # look at the model
@@ -117,8 +117,8 @@ if run_f:
     plot_model(final_model_f, to_file='plots/model_f.png', show_shapes=True, show_layer_names=True)
     
     # Get predictions for each split
-    yf_pred_data = final_model_f.predict(Xf_data)
-    yf_pred_test = final_model_f.predict(Xf_test)
+    yf_pred_data = predict_and_inverse(final_model_f, Xf_data)
+    yf_pred_test = predict_and_inverse(final_model_f, Xf_test)
     
     # plot the fraction output values
     plot_outputs(yf_data[:, 0],yf_test[:, 0],yf_pred_data[:, 0],yf_pred_test[:, 0],idx_f_data,idx_f_test,r'Plot for $f_1$',log=False, maerun=True,x_min=0,x_max=1,save_path='plots/f1.png')
