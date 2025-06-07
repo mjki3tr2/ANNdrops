@@ -2,30 +2,27 @@ from read_data import read_data
 from read_fits import read_fits
 from prep_data import prep_data
 from calc_d32 import calc_d32
-from remove_zeros import remove_zeros
 from scale import scale
-from split_data import split_data
-from optimise_model import optimise_model
+from optimise_parameters import optimise_parameters
+from train_model import train_model
+from predict_and_inverse import predict_and_inverse
 from plot_outputs import plot_outputs
 from plot_training_history import plot_training_history
-from inverse_scale import inverse_scale
-from predict_and_inverse import predict_and_inverse
 from plot_DSD_comp import plot_DSD_comp
 from plot_xy import plot_xy
 
 import numpy as np
 from skopt.space import Real, Integer
+from sklearn.model_selection import train_test_split
 from tensorflow.keras.utils import plot_model
-from sklearn.preprocessing import MinMaxScaler
-from tensorflow.keras.models import load_model
 
 import sys
+import os
 
 """
 Set Parameters
 """
 test_fraction = 0.1
-validate_to_train_ratio = 0.3
 
 #Model output options
 #'linear' - no change
@@ -34,18 +31,20 @@ validate_to_train_ratio = 0.3
 #'threshold_activation' - threshold of 0.1 min
 #'normalized_relu' - make sure the sum is 1 by normalisation
 
-n_runs = 5 # minimisation loops
+n_runs = 1 # minimisation loops
 num_optimise = 70 # number of minimisaion steps
 num_initial = 20 # number of initial mapping guesses
+n_splits = 5 # number of K-fold sections
 space_model = [
     Real(1e-5, 1e-2,name='lr', prior='log-uniform'),
     Integer(500, 1000, name='epochs'),
-    Integer(2, 3, name='layers'),
+    Integer(1, 3, name='layers'),
     Integer(10, 100, name='hidden_units'),
     Real(1.0, 2.0, name='taper_rate'),
     Real(0.0, 0.4, name='dropout_rate'),
     Real(1e-6, 1e-2, name='l2_factor', prior='log-uniform')
 ]
+max_params_ratio = 5.0 # ratio of max number of parameters to number of samples
 
 """
 Initial Setup
@@ -88,26 +87,32 @@ del DSD_flat, diameter_fix, properties_fix, props_repeated, diameter_tiled, comb
 """
 Undertake the model fitting
 """
-# split the data into test, train, and validate
-XDSD_test, XDSD_train, XDSD_valid, yDSD_test, yDSD_train, yDSD_valid, idx_DSD_test, idx_DSD_train, idx_DSD_valid = split_data(X_DSD_scaled,y_DSD_scaled,indices_DSD,test_fraction,validate_to_train_ratio)
+# split the data into test, and the data for the K-fold
+XDSD_data, XDSD_test, yDSD_data, yDSD_test, idx_DSD_data, idx_DSD_test = train_test_split(
+    X_DSD_scaled,y_DSD_scaled,indices_DSD,test_size=test_fraction,random_state=123)
 
 # undertake optimisation of the model for the volume fraction
 print("Running DSD Optimisation")
-final_model_DSD, history_DSD_final, combined_DSD_history, DSD_info = optimise_model(XDSD_train,yDSD_train,XDSD_valid,yDSD_valid,XDSD_test,yDSD_test,space_model,'relu',n_runs,num_optimise,num_initial)
+DSD_info = optimise_parameters(XDSD_data,yDSD_data,XDSD_test,yDSD_test,space_model,'relu',n_runs,num_optimise,num_initial,n_splits,max_params_ratio)
+final_model_DSD, history_DSD_final = train_model(XDSD_data,yDSD_data,XDSD_test,yDSD_test,'relu',DSD_info)
 final_model_DSD.save("DSD_model.keras")
 
-# Get predictions for each split
-yDSD_pred_train = final_model_DSD.predict(XDSD_train)
-yDSD_pred_valid = final_model_DSD.predict(XDSD_valid)
-yDSD_pred_test = final_model_DSD.predict(XDSD_test)
-yDSD_pred_train, yDSD_pred_valid, yDSD_pred_test, yDSD_train, yDSD_valid, yDSD_test = inverse_scale(yDSD_pred_train,yDSD_pred_valid,yDSD_pred_test,yDSD_train,yDSD_valid,yDSD_test,scaler_y_DSD,log=False)
-
-# plot the fraction output values
-plot_outputs(yDSD_train[:, 0],yDSD_valid[:, 0],yDSD_test[:, 0],yDSD_pred_train[:, 0],yDSD_pred_valid[:, 0],yDSD_pred_test[:, 0],idx_DSD_train,idx_DSD_valid,idx_DSD_test,r'Plot for DSD',log=False, maerun=True,save_path='plots/DSDfull.png')
+# look at the model
+final_model_DSD.summary()
+os.makedirs("plots", exist_ok=True)
+plot_model(final_model_DSD, to_file='plots/model_DSD.png', show_shapes=True, show_layer_names=True)
 
 # plot the training history graph
 plot_training_history(history_DSD_final, title=r'DSD Model Training History',save_path='plots/DSD_model_training.png')
-plot_training_history(combined_DSD_history, title=r'DSD Model Training History',save_path='plots/DSD_model_combined.png')
+
+# Get predictions for each split
+yDSD_pred_data = predict_and_inverse(final_model_DSD, XDSD_data, scaler_y_DSD)
+yDSD_pred_test = predict_and_inverse(final_model_DSD, XDSD_test, scaler_y_DSD)
+yDSD_data = scaler_y_DSD.inverse_transform(yDSD_data)
+yDSD_test = scaler_y_DSD.inverse_transform(yDSD_test)
+
+# plot the fraction output values
+plot_outputs(yDSD_data,yDSD_test,yDSD_pred_data,yDSD_pred_test,idx_DSD_data,idx_DSD_test,r'Plot for DSD points',log=True, maerun=False, save_path='plots/DSDmodel.png')
 
 # Re-run on the whole input to get the DSDs
 y_DSD_pred = predict_and_inverse(final_model_DSD, X_DSD_scaled, scaler_y_DSD)

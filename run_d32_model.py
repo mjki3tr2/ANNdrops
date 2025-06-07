@@ -15,6 +15,7 @@ from sklearn.model_selection import train_test_split
 from tensorflow.keras.utils import plot_model
 
 import sys
+import os
 
 """
 Set Parameters
@@ -36,11 +37,12 @@ space_model = [
     Real(1e-5, 1e-2,name='lr', prior='log-uniform'),
     Integer(500, 1000, name='epochs'),
     Integer(1, 2, name='layers'),
-    Integer(10, 100, name='hidden_units'),
+    Integer(10, 50, name='hidden_units', prior='log-uniform'),
     Real(1.0, 2.0, name='taper_rate'),
     Real(0.0, 0.4, name='dropout_rate'),
     Real(1e-6, 1e-2, name='l2_factor', prior='log-uniform')
 ]
+max_params_ratio = 5.0 # ratio of max number of parameters to number of samples
 
 """
 Initial Setup
@@ -76,14 +78,15 @@ Xd32_data, Xd32_test, yd32_data, yd32_test, idx_d32_data, idx_d32_test = train_t
     X_d32_scaled,y_d32_scaled,indices_d32,test_size=test_fraction,random_state=123
 )
 
-## undertake optimisation of the model for the volume fraction
+# undertake optimisation of the model for the d32's
 print("Running d32 Optimisation")
-d32_info = optimise_parameters(Xd32_data,yd32_data,Xd32_test,yd32_test,space_model,'linear',n_runs,num_optimise,num_initial,n_splits)
+d32_info = optimise_parameters(Xd32_data,yd32_data,Xd32_test,yd32_test,space_model,'linear',n_runs,num_optimise,num_initial,n_splits,max_params_ratio)
 final_model_d32, history_d32_final = train_model(Xd32_data,yd32_data,Xd32_test,yd32_test,'linear',d32_info)
 final_model_d32.save("d32_model.keras")
 
 # look at the model
 final_model_d32.summary()
+os.makedirs("plots", exist_ok=True)
 plot_model(final_model_d32, to_file='plots/model_d32.png', show_shapes=True, show_layer_names=True)
 
 # plot the training history graph
@@ -95,5 +98,5 @@ yd32_pred_test = predict_and_inverse(final_model_d32, Xd32_test, scaler_y_d32, e
 yd32_data = np.exp(scaler_y_d32.inverse_transform(yd32_data))
 yd32_test = np.exp(scaler_y_d32.inverse_transform(yd32_test))
 
-# plot the fraction output values
+# plot the d32 output values
 plot_outputs(yd32_data,yd32_test,yd32_pred_data,yd32_pred_test,idx_d32_data,idx_d32_test,r'Plot for $d_{32}$',log=True, maerun=False, save_path='plots/d32model.png')

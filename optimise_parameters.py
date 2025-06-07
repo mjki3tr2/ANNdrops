@@ -2,32 +2,19 @@ from sklearn.model_selection import KFold
 
 def optimise_parameters(x_data,y_data,x_test,y_test,
                     space_model,final_activation,
-                    n_runs,num_op,num_initial,n_splits=5):
+                    n_runs,num_op,num_initial,
+                    n_splits=5,max_params_ratio = 5.0):
     
-    from sklearn.metrics import mean_absolute_error
     from skopt import gp_minimize
     from sklearn.metrics import r2_score
     from build_model import build_model
-    from plot_xy import plot_xy
     import numpy as np
-    import matplotlib.pyplot as plt
-    import os
-    import datetime
     from tensorflow.keras import backend as K
     import gc
     
-    from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping
-    from skopt.space import Real, Integer
+    from tensorflow.keras.callbacks import EarlyStopping
     import skopt.utils as sku
 
-    lr_scheduler = ReduceLROnPlateau(
-        monitor='val_loss',
-        factor=0.5,
-        patience=10,
-        min_lr=1e-7,
-        verbose=1
-    )
-    
     early_stop = EarlyStopping(
         monitor='val_loss',
         patience=20,              # Stop after 20 epochs with no improvement
@@ -103,35 +90,29 @@ def optimise_parameters(x_data,y_data,x_test,y_test,
                     output_width=y_train.shape[1]
                 )
                 
-                # Train the model using the training set and evaluate on the validation set.
-                history_optimise = model.fit(
-                    x_train, y_train,
-                    validation_data=(x_valid, y_valid),
-                    epochs=epochs,
-                    batch_size=32,
-                    callbacks=[early_stop],
-                    verbose=0 # set to 0 for tuning so that training output isn't printed each time
-                )
-            
-                # Evaluate the model on the validation set (taking an average on the last 10 points).
-                #train_loss = np.mean(history_optimise.history['loss'][-20:])
-                val_loss = np.mean(history_optimise.history['val_loss'][-20:])
+                if model.count_params() > x_train.shape[0] * max_params_ratio:
+                    print(f"⚠️ Skipped: {model.count_params()} params > {int(x_train.shape[0] * max_params_ratio)} allowed.")
+                    val_loss = 1e6
+                    r2 = -10
+                else:
+                    # Train the model using the training set and evaluate on the validation set.
+                    history_optimise = model.fit(
+                        x_train, y_train,
+                        validation_data=(x_valid, y_valid),
+                        epochs=epochs,
+                        batch_size=32,
+                        callbacks=[early_stop],
+                        verbose=0 # set to 0 for tuning so that training output isn't printed each time
+                    )
+                    
+                    # Evaluate the model on the validation set (taking an average on the last 10 points).
+                    val_loss = np.mean(history_optimise.history['val_loss'][-20:])
+                    
+                    # Compute R^2 on the validation set.
+                    y_pred = model.predict(x_valid)
+                    r2 = r2_score(y_valid,y_pred)
+                
                 val_losses.append(val_loss)
-                
-                #loss_var = np.var(history_optimise.history['val_loss'][-20:])
-                #loss_var_frac = loss_var/val_loss
-                
-                # Compute the penalty for the difference between train and val loss
-                #lambda_diff = 0.5 # Weight on the |train_loss - val_lossss| term
-                #penalty_diff = lambda_diff * max(0.0, train_loss - val_loss)
-                
-                # Compute the penalty for the smoothness of the loss
-                #lambda_var = 1.0 # weight on the var
-                #penalty_var = lambda_var * loss_var_frac
-                
-                # Compute R^2 on the validation set.
-                y_pred = model.predict(x_valid)
-                r2 = r2_score(y_valid,y_pred)
                 val_r2s.append(r2)
             
             avg_val_loss = np.mean(val_losses)

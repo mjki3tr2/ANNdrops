@@ -97,14 +97,17 @@ class NormalizedReLU(Layer):
         self.epsilon = epsilon
 
     def call(self, inputs):
-        # Apply standard ReLU
         relu_output = tf.nn.relu(inputs)
-        # Sum along the feature axis
         sum_ = tf.reduce_sum(relu_output, axis=1, keepdims=True)
-        # Clamp the sum to prevent division by zero
+        # Check which rows are all-zero (sum == 0)
+        is_zero = tf.less_equal(sum_, self.epsilon)
+        # Get number of features
+        n_features = tf.cast(tf.shape(inputs)[1], tf.float32)
+        uniform = tf.ones_like(inputs) / n_features
+        # Normalize relu output or fall back to uniform
         sum_clamped = tf.maximum(sum_, self.epsilon)
-        # Normalize the output so values sum to 1
-        return relu_output / sum_clamped
+        normalized = relu_output / sum_clamped
+        return tf.where(is_zero, uniform, normalized)
 
     def get_config(self):
         config = super().get_config()

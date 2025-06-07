@@ -15,6 +15,7 @@ from sklearn.model_selection import train_test_split
 from tensorflow.keras.utils import plot_model
 
 import sys
+import os
 
 """
 Information
@@ -43,12 +44,13 @@ n_splits = 5 # number of K-fold sections
 space_model = [
     Real(1e-5, 1e-2,name='lr', prior='log-uniform'),
     Integer(500, 1000, name='epochs'),
-    Integer(2, 3, name='layers'),
-    Integer(10, 100, name='hidden_units'),
+    Integer(1, 2, name='layers'),
+    Integer(10, 50, name='hidden_units', prior='log-uniform'),
     Real(1.0, 2.0, name='taper_rate'),
     Real(0.0, 0.4, name='dropout_rate'),
     Real(1e-6, 1e-2, name='l2_factor', prior='log-uniform')
 ]
+max_params_ratio = 5.0 # ratio of max number of parameters to number of samples
 
 # models to run
 run_f=True
@@ -108,12 +110,13 @@ if run_f:
     
     # undertake optimisation of the model for the volume fraction
     print("Running Volume Fraction Optimisation")
-    volfrac_info = optimise_parameters(Xf_data,yf_data,Xf_test,yf_test,space_model,'softmax',n_runs,num_optimise,num_initial,n_splits)
-    final_model_f, history_volfrac_final = train_model(Xf_data,yf_data,Xf_test,yf_test,'softmax',volfrac_info)
+    volfrac_info = optimise_parameters(Xf_data,yf_data,Xf_test,yf_test,space_model,'normalized_relu',n_runs,num_optimise,num_initial,n_splits,max_params_ratio)
+    final_model_f, history_volfrac_final = train_model(Xf_data,yf_data,Xf_test,yf_test,'normalized_relu',volfrac_info)
     final_model_f.save("volume_fraction_model.keras")
     
     # look at the model
     final_model_f.summary()
+    os.makedirs("plots", exist_ok=True)
     plot_model(final_model_f, to_file='plots/model_f.png', show_shapes=True, show_layer_names=True)
     
     # Get predictions for each split
@@ -138,12 +141,13 @@ if run_Mo:
         X_1_scaled,y_Mo1_scaled,indices_1,test_size=test_fraction,random_state=123
     )
     
-    Mo1_info = optimise_parameters(XMo1_data,yMo1_data,XMo1_test,yMo1_test,space_model,'linear',n_runs,num_optimise,num_initial,n_splits)
+    Mo1_info = optimise_parameters(XMo1_data,yMo1_data,XMo1_test,yMo1_test,space_model,'linear',n_runs,num_optimise,num_initial,n_splits,max_params_ratio)
     final_model_Mo1, history_Mo1_final = train_model(XMo1_data,yMo1_data,XMo1_test,yMo1_test,'linear',Mo1_info)
     final_model_Mo1.save("Mo1_model.keras")
     
     # look at the model
     final_model_Mo1.summary()
+    os.makedirs("plots", exist_ok=True)
     plot_model(final_model_Mo1, to_file='plots/model_Mo1.png', show_shapes=True, show_layer_names=True)
     
     # Get predictions for each split
@@ -168,12 +172,13 @@ if run_Mo:
         X_2_scaled,y_Mo2_scaled,indices_2,test_size=test_fraction,random_state=123
     )
     
-    Mo2_info = optimise_parameters(XMo2_data,yMo2_data,XMo2_test,yMo2_test,space_model,'linear',n_runs,num_optimise,num_initial,n_splits)
+    Mo2_info = optimise_parameters(XMo2_data,yMo2_data,XMo2_test,yMo2_test,space_model,'linear',n_runs,num_optimise,num_initial,n_splits,max_params_ratio)
     final_model_Mo2, history_Mo2_final = train_model(XMo2_data,yMo2_data,XMo2_test,yMo2_test,'linear',Mo2_info)
     final_model_Mo2.save("Mo2_model.keras")
     
     # look at the model
     final_model_Mo2.summary()
+    os.makedirs("plots", exist_ok=True)
     plot_model(final_model_Mo2, to_file='plots/model_Mo2.png', show_shapes=True, show_layer_names=True)
     
     # Get predictions for each split
@@ -198,13 +203,14 @@ if run_Mo:
         X_3_scaled,y_Mo3_scaled,indices_3,test_size=test_fraction,random_state=123
     )
     
-    Mo3_info = optimise_parameters(XMo3_data,yMo3_data,XMo3_test,yMo3_test,space_model,'linear',n_runs,num_optimise,num_initial,n_splits)
+    Mo3_info = optimise_parameters(XMo3_data,yMo3_data,XMo3_test,yMo3_test,space_model,'linear',n_runs,num_optimise,num_initial,n_splits,max_params_ratio)
     final_model_Mo3, history_Mo3_final = train_model(XMo3_data,yMo3_data,XMo3_test,yMo3_test,'linear',Mo3_info)
     final_model_Mo3.save("Mo1_model.keras")
     
     # look at the model
-    final_model_Mo1.summary()
-    plot_model(final_model_Mo1, to_file='plots/model_Mo1.png', show_shapes=True, show_layer_names=True)
+    final_model_Mo3.summary()
+    os.makedirs("plots", exist_ok=True)
+    plot_model(final_model_Mo3, to_file='plots/model_Mo3.png', show_shapes=True, show_layer_names=True)
     
     # Get predictions for each split
     yMo3_pred_data = predict_and_inverse(final_model_Mo3, XMo3_data, scaler_y_Mo3, exp=True)
@@ -228,12 +234,13 @@ if run_s:
         X_1_scaled,y_s1_scaled,indices_1,test_size=test_fraction,random_state=123
     )
     
-    s1_info = optimise_parameters(Xs1_data,ys1_data,Xs1_test,ys1_test,space_model,'linear',n_runs,num_optimise,num_initial,n_splits)
+    s1_info = optimise_parameters(Xs1_data,ys1_data,Xs1_test,ys1_test,space_model,'linear',n_runs,num_optimise,num_initial,n_splits,max_params_ratio)
     final_model_s1, history_s1_final = train_model(Xs1_data,ys1_data,Xs1_test,ys1_test,'linear',s1_info)
     final_model_s1.save("s1_model.keras")
     
     # look at the model
     final_model_s1.summary()
+    os.makedirs("plots", exist_ok=True)
     plot_model(final_model_s1, to_file='plots/model_s1.png', show_shapes=True, show_layer_names=True)
     
     # Get predictions for each split
@@ -254,12 +261,13 @@ if run_s:
         X_2_scaled,y_s2_scaled,indices_2,test_size=test_fraction,random_state=123
     )
     
-    s2_info = optimise_parameters(Xs2_data,ys2_data,Xs2_test,ys2_test,space_model,'linear',n_runs,num_optimise,num_initial,n_splits)
+    s2_info = optimise_parameters(Xs2_data,ys2_data,Xs2_test,ys2_test,space_model,'linear',n_runs,num_optimise,num_initial,n_splits,max_params_ratio)
     final_model_s2, history_s2_final = train_model(Xs2_data,ys2_data,Xs2_test,ys2_test,'linear',s2_info)
     final_model_s2.save("s2_model.keras")
     
     # look at the model
     final_model_s2.summary()
+    os.makedirs("plots", exist_ok=True)
     plot_model(final_model_s2, to_file='plots/model_s2.png', show_shapes=True, show_layer_names=True)
     
     # Get predictions for each split
@@ -280,12 +288,13 @@ if run_s:
         X_3_scaled,y_s3_scaled,indices_3,test_size=test_fraction,random_state=123
     )
     
-    s3_info = optimise_parameters(Xs3_data,ys3_data,Xs3_test,ys3_test,space_model,'linear',n_runs,num_optimise,num_initial,n_splits)
+    s3_info = optimise_parameters(Xs3_data,ys3_data,Xs3_test,ys3_test,space_model,'linear',n_runs,num_optimise,num_initial,n_splits,max_params_ratio)
     final_model_s3, history_s3_final = train_model(Xs3_data,ys3_data,Xs3_test,ys3_test,'linear',s3_info)
     final_model_s3.save("s3_model.keras")
     
     # look at the model
     final_model_s3.summary()
+    os.makedirs("plots", exist_ok=True)
     plot_model(final_model_s3, to_file='plots/model_s3.png', show_shapes=True, show_layer_names=True)
     
     # Get predictions for each split
