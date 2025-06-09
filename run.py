@@ -38,8 +38,8 @@ test_fraction = 0.1
 #'normalized_relu' - make sure the sum is 1 by normalisation
 
 n_runs = 1 # minimisation loops
-num_optimise = 4 # number of minimisaion steps
-num_initial = 2 # number of initial mapping guesses
+num_optimise = 70 # number of minimisaion steps
+num_initial = 20 # number of initial mapping guesses
 n_splits = 5 # number of K-fold sections
 space_model = [
     Real(1e-5, 1e-2,name='lr', prior='log-uniform'),
@@ -157,15 +157,10 @@ if run_Mo:
     yMo1_test = np.exp(scaler_y_Mo1.inverse_transform(yMo1_test))
     
     # plot the Mo output values
-    plot_outputs(yMo1_data,yMo1_test,yMo1_pred_data,yMo1_pred_test,idx_Mo1_data,idx_Mo1_test,r'Plot for Mo$_1$',log=True, maerun=False,save_path='plots/Mo1.png')
+    plot_outputs(yMo1_data,yMo1_test,yMo1_pred_data,yMo1_pred_test,idx_Mo1_data,idx_Mo1_test,r'Plot for Mo$_1$',log=True, maerun=False,x_min=1,x_max=1000,save_path='plots/Mo1.png')
     
     # plot the training history graph
     plot_training_history(history_Mo1_final, title=r'Mo$_1$ Model Training History',save_path='plots/Mo1_model_training.png')
-    
-    # undertake optimisation of Mo1 model
-    XMo1_data, XMo1_test, yMo1_data, yMo1_test, idx_Mo1_data, idx_Mo1_test = train_test_split(
-        X_1_scaled,y_Mo1_scaled,indices_1,test_size=test_fraction,random_state=123
-    )
     
     print("Running Mo2 Optimisation")
     XMo2_data, XMo2_test, yMo2_data, yMo2_test, idx_Mo2_data, idx_Mo2_test = train_test_split(
@@ -188,16 +183,11 @@ if run_Mo:
     yMo2_test = np.exp(scaler_y_Mo2.inverse_transform(yMo2_test))
     
     # plot the Mo output values
-    plot_outputs(yMo2_data,yMo2_test,yMo2_pred_data,yMo2_pred_test,idx_Mo2_data,idx_Mo2_test,r'Plot for Mo$_2$',log=True, maerun=False,save_path='plots/Mo2.png')
+    plot_outputs(yMo2_data,yMo2_test,yMo2_pred_data,yMo2_pred_test,idx_Mo2_data,idx_Mo2_test,r'Plot for Mo$_2$',log=True, maerun=False,x_min=1,x_max=1000,save_path='plots/Mo2.png')
     
     # plot the training history graph
     plot_training_history(history_Mo2_final, title=r'Mo$_2$ Model Training History',save_path='plots/Mo2_model_training.png')
-    
-    # undertake optimisation of Mo2 model
-    XMo2_data, XMo2_test, yMo2_data, yMo2_test, idx_Mo2_data, idx_Mo2_test = train_test_split(
-        X_2_scaled,y_Mo2_scaled,indices_2,test_size=test_fraction,random_state=123
-    )
-    
+        
     print("Running Mo3 Optimisation")
     XMo3_data, XMo3_test, yMo3_data, yMo3_test, idx_Mo3_data, idx_Mo3_test = train_test_split(
         X_3_scaled,y_Mo3_scaled,indices_3,test_size=test_fraction,random_state=123
@@ -219,7 +209,7 @@ if run_Mo:
     yMo3_test = np.exp(scaler_y_Mo3.inverse_transform(yMo3_test))
     
     # plot the Mo output values
-    plot_outputs(yMo3_data,yMo3_test,yMo3_pred_data,yMo3_pred_test,idx_Mo3_data,idx_Mo3_test,r'Plot for Mo$_3$',log=True, maerun=False,save_path='plots/Mo3.png')
+    plot_outputs(yMo3_data,yMo3_test,yMo3_pred_data,yMo3_pred_test,idx_Mo3_data,idx_Mo3_test,r'Plot for Mo$_3$',log=True, maerun=False,x_min=1,x_max=1000,save_path='plots/Mo3.png')
     
     # plot the training history graph
     plot_training_history(history_Mo3_final, title=r'Mo$_3$ Model Training History',save_path='plots/Mo3_model_training.png')
@@ -250,7 +240,7 @@ if run_s:
     ys1_test = scaler_y_s1.inverse_transform(ys1_test)
     
     # plot the s output values
-    plot_outputs(ys1_data,ys1_test,ys1_pred_data,ys1_pred_test,idx_s1_data,idx_s1_test,r'Plot for $\sigma_1$',log=False, maerun=False,save_path='plots/s1.png')
+    plot_outputs(ys1_data,ys1_test,ys1_pred_data,ys1_pred_test,idx_s1_data,idx_s1_test,r'Plot for $\sigma_1$',log=False, maerun=False,x_min=0.2,x_max=1.3,save_path='plots/s1.png')
     
     # plot the training history graph
     plot_training_history(history_s1_final, title=r'$\sigma_1$ Model Training History',save_path='plots/s1_model_training.png')
@@ -277,7 +267,7 @@ if run_s:
     ys2_test = scaler_y_s2.inverse_transform(ys2_test)
     
     # plot the s output values
-    plot_outputs(ys2_data,ys2_test,ys2_pred_data,ys2_pred_test,idx_s2_data,idx_s2_test,r'Plot for $\sigma_2$',log=False, maerun=False,save_path='plots/s2.png')
+    plot_outputs(ys2_data,ys2_test,ys2_pred_data,ys2_pred_test,idx_s2_data,idx_s2_test,r'Plot for $\sigma_2$',log=False, maerun=False,x_min=0.2,x_max=1.3,save_path='plots/s2.png')
     
     # plot the training history graph
     plot_training_history(history_s2_final, title=r'$\sigma_2$ Model Training History',save_path='plots/s2_model_training.png')
@@ -304,7 +294,7 @@ if run_s:
     ys3_test = scaler_y_s3.inverse_transform(ys3_test)
     
     # plot the s output values
-    plot_outputs(ys3_data,ys3_test,ys3_pred_data,ys3_pred_test,idx_s3_data,idx_s3_test,r'Plot for $\sigma_3$',log=False, maerun=False,save_path='plots/s3.png')
+    plot_outputs(ys3_data,ys3_test,ys3_pred_data,ys3_pred_test,idx_s3_data,idx_s3_test,r'Plot for $\sigma_3$',log=False, maerun=False,x_min=0.2,x_max=1.3,save_path='plots/s3.png')
     
     # plot the training history graph
     plot_training_history(history_s3_final, title=r'$\sigma_3$ Model Training History',save_path='plots/s3_model_training.png')
