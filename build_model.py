@@ -41,7 +41,7 @@ def build_model(
         final_outputs = ThresholdActivation(threshold=0.1, name="Threshold_of_0.1")(raw_outputs)
     elif use_normalized_relu:
         raw_outputs = Dense(output_width,activation='relu', name="Raw_relu_Output_Layer")(x)
-        final_outputs = NormalizedReLU(name="Normalizing_Layer")(raw_outputs)
+        final_outputs = NormalizedReLU(use_uniform_fallback=False, name="Normalizing_Layer")(raw_outputs)
     else:
         final_outputs = Dense(output_width, activation=final_activation,name=f"{final_activation}_Output_Layer")(x)
 
@@ -92,24 +92,41 @@ class AdjustedSoftmax(Layer):
 
 @register_keras_serializable()
 class NormalizedReLU(Layer):
-    def __init__(self, epsilon=1e-6, **kwargs):
+    def __init__(self, epsilon=1e-6, use_uniform_fallback=True, **kwargs):
         super().__init__(**kwargs)
         self.epsilon = epsilon
+        self.use_uniform_fallback = use_uniform_fallback
 
     def call(self, inputs):
         relu_output = tf.nn.relu(inputs)
         sum_ = tf.reduce_sum(relu_output, axis=1, keepdims=True)
-        # Check which rows are all-zero (sum == 0)
-        is_zero = tf.less_equal(sum_, self.epsilon)
-        # Get number of features
-        n_features = tf.cast(tf.shape(inputs)[1], tf.float32)
-        uniform = tf.ones_like(inputs) / n_features
-        # Normalize relu output or fall back to uniform
+        is_zero = tf.less_equal(sum_, self.epsilon)  # shape: [batch_size, 1]
+
+        n_features = tf.shape(inputs)[1]
+        batch_size = tf.shape(inputs)[0]
+
+        if self.use_uniform_fallback:
+            # Each row gets [1/n, ..., 1/n]
+            fallback = tf.ones_like(inputs) / tf.cast(n_features, inputs.dtype)
+        else:
+            # Each row gets [1, 0, ..., 0]
+            fallback = tf.one_hot(
+                tf.zeros(batch_size, dtype=tf.int32),  # indices = 0
+                depth=n_features,
+                dtype=inputs.dtype
+            )
+
         sum_clamped = tf.maximum(sum_, self.epsilon)
         normalized = relu_output / sum_clamped
-        return tf.where(is_zero, uniform, normalized)
+
+        # tf.where needs condition to match shape
+        condition = tf.tile(is_zero, [1, n_features])  # shape: [batch_size, n_features]
+        return tf.where(condition, fallback, normalized)
 
     def get_config(self):
         config = super().get_config()
-        config.update({'epsilon': self.epsilon})
+        config.update({
+            'epsilon': self.epsilon,
+            'use_uniform_fallback': self.use_uniform_fallback
+        })
         return config
