@@ -38,8 +38,8 @@ test_fraction = 0.1
 #'normalized_relu' - make sure the sum is 1 by normalisation
 
 n_runs = 1 # minimisation loops
-num_optimise = 70 # number of minimisaion steps
-num_initial = 20 # number of initial mapping guesses
+num_optimise = 4 # number of minimisaion steps
+num_initial = 2 # number of initial mapping guesses
 n_splits = 5 # number of K-fold sections
 space_model = [
     Real(1e-5, 1e-2,name='lr', prior='log-uniform'),
@@ -50,7 +50,7 @@ space_model = [
     Real(0.0, 0.4, name='dropout_rate'),
     Real(1e-6, 1e-2, name='l2_factor', prior='log-uniform')
 ]
-max_params_ratio = 5.0 # ratio of max number of parameters to number of samples
+max_params_ratio = 100.0 # ratio of max number of parameters to number of samples
 
 # models to run
 run_f=True
