@@ -113,4 +113,4 @@ plot_xy(d32_exp,d32_pred,title_str=r'Plot for $d_{32}$',save_path='plots/d32.png
 for i, index in enumerate(indices_f):
     index=int(index.item())
     savepath=f'DSD_plots/{index:03d}.png'
-    plot_DSD_comp(diameter,DSD,labels,properties,y_small_cum,y_medium_cum,y_large_cum,y_total_cum,index,save_path=savepath)
+    plot_DSD_comp(diameter,DSD,labels,properties,y_small_cum,y_medium_cum,y_large_cum,y_total_cum,i,save_path=savepath)
