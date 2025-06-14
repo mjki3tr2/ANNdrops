@@ -39,12 +39,17 @@ space_model = [
     Real(1e-5, 1e-2,name='lr', prior='log-uniform'),
     Integer(500, 1000, name='epochs'),
     Integer(1, 3, name='layers'),
-    Integer(10, 100, name='hidden_units'),
+    Integer(10, 250, name='hidden_units'),
     Real(1.0, 2.0, name='taper_rate'),
     Real(0.0, 0.4, name='dropout_rate'),
     Real(1e-6, 1e-2, name='l2_factor', prior='log-uniform')
 ]
-max_params_ratio = 5.0 # ratio of max number of parameters to number of samples
+max_params_ratio = 100.0 # ratio of max number of parameters to number of samples
+
+xDSD_min=0
+xDSD_max=0.2
+xd32_min=1
+xd32_max=1000
 
 """
 Initial Setup
@@ -112,7 +117,7 @@ yDSD_data = scaler_y_DSD.inverse_transform(yDSD_data)
 yDSD_test = scaler_y_DSD.inverse_transform(yDSD_test)
 
 # plot the fraction output values
-plot_outputs(yDSD_data,yDSD_test,yDSD_pred_data,yDSD_pred_test,idx_DSD_data,idx_DSD_test,r'Plot for DSD points',log=True, maerun=False, save_path='plots/DSDmodel.png')
+plot_outputs(yDSD_data,yDSD_test,yDSD_pred_data,yDSD_pred_test,idx_DSD_data,idx_DSD_test,r'Plot for DSD points',log=True, maerun=False, x_min=xDSD_min, x_max=xDSD_max, save_path='plots/DSDmodel.png')
 
 # Re-run on the whole input to get the DSDs
 y_DSD_pred = predict_and_inverse(final_model_DSD, X_DSD_scaled, scaler_y_DSD)
@@ -126,7 +131,7 @@ d32_pred=np.zeros(len(DSD))
 for index in range(len(DSD)):
     d32_pred[index] = calc_d32(DSD_predicted[index],diameter)
 
-plot_xy(d32_exp,d32_pred,title_str=r'Plot for $d_{32}$',save_path='plots/d32DSD.png')
+plot_xy(d32_exp,d32_pred,title_str=r'Plot for $d_{32}$',x_min=xd32_min, x_max=xd32_max, save_path='plots/d32DSD.png')
 
 #plot DSDs
 for i, index in enumerate(properties[:,0]):

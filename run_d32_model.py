@@ -30,8 +30,8 @@ test_fraction = 0.1
 #'normalized_relu' - make sure the sum is 1 by normalisation
 
 n_runs = 1 # minimisation loops
-num_optimise = 5 # number of minimisaion steps
-num_initial = 2 # number of initial mapping guesses
+num_optimise = 70 # number of minimisaion steps
+num_initial = 20 # number of initial mapping guesses
 n_splits = 5 # number of K-fold sections
 space_model = [
     Real(1e-5, 1e-2,name='lr', prior='log-uniform'),
@@ -42,7 +42,10 @@ space_model = [
     Real(0.0, 0.4, name='dropout_rate'),
     Real(1e-6, 1e-2, name='l2_factor', prior='log-uniform')
 ]
-max_params_ratio = 5.0 # ratio of max number of parameters to number of samples
+max_params_ratio = 100.0 # ratio of max number of parameters to number of samples
+
+xd32_min=1
+xd32_max=1000
 
 """
 Initial Setup
@@ -99,4 +102,4 @@ yd32_data = np.exp(scaler_y_d32.inverse_transform(yd32_data))
 yd32_test = np.exp(scaler_y_d32.inverse_transform(yd32_test))
 
 # plot the d32 output values
-plot_outputs(yd32_data,yd32_test,yd32_pred_data,yd32_pred_test,idx_d32_data,idx_d32_test,r'Plot for $d_{32}$',log=True, maerun=False, save_path='plots/d32model.png')
+plot_outputs(yd32_data,yd32_test,yd32_pred_data,yd32_pred_test,idx_d32_data,idx_d32_test,r'Plot for $d_{32}$',log=True, maerun=False, x_min=xd32_min, x_max=xd32_max, save_path='plots/d32model.png')
