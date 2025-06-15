@@ -1,10 +1,9 @@
-from sklearn.model_selection import KFold
-
 def optimise_parameters(x_data,y_data,x_test,y_test,
                     space_model,final_activation,
                     n_runs,num_op,num_initial,
                     n_splits=5,max_params_ratio = 5.0):
     
+    from sklearn.model_selection import KFold
     from skopt import gp_minimize
     from sklearn.metrics import r2_score
     from build_model import build_model
@@ -22,15 +21,10 @@ def optimise_parameters(x_data,y_data,x_test,y_test,
         verbose=0
     )
     
-    use_adjusted_softmax=False
-    use_threshold_activation=False
-    use_normalized_relu=False
-    if final_activation == 'adjusted_softmax':
-        use_adjusted_softmax=True
-    elif final_activation == 'threshold_activation':
-        use_threshold_activation=True
-    elif final_activation == 'normalized_relu':
-        use_normalized_relu=True
+    # Logic setters for outputs
+    use_adjusted_softmax = (final_activation == 'adjusted_softmax')
+    use_threshold_activation = (final_activation == 'threshold_activation')
+    use_normalized_relu = (final_activation == 'normalized_relu')
     
     # Plots a graph of the minimisation progress
     #def plot_gp_progress(all_runs):
@@ -61,92 +55,85 @@ def optimise_parameters(x_data,y_data,x_test,y_test,
     def print_progress(res):
         print(f"[{len(res.x_iters)}/{num_op}] Step completed.")
     
-    kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
-    
-    @sku.use_named_args(dimensions=space_model)
-    def objective(lr, epochs, layers, hidden_units, taper_rate, dropout_rate, l2_factor):
-        val_losses = []
-        val_r2s = []
-        try:
-            for train_idx, val_idx in kf.split(x_data):
-                # Clear previous session to free memory
-                K.clear_session()
-                
-                x_train, x_valid = x_data[train_idx], x_data[val_idx]
-                y_train, y_valid = y_data[train_idx], y_data[val_idx]
-                
-                
-                model = build_model(
-                    input_dim=x_train.shape[1],
-                    hidden_units = tapered_layers(hidden_units, taper_rate, layers),
-                    #activation='relu',
-                    lr=lr,
-                    use_adjusted_softmax=use_adjusted_softmax,
-                    use_threshold_activation=use_threshold_activation,
-                    use_normalized_relu=use_normalized_relu,
-                    final_activation=final_activation,
-                    dropout_rate=dropout_rate,
-                    l2_factor=l2_factor,
-                    output_width=y_train.shape[1]
-                )
-                
-                if model.count_params() > x_train.shape[0] * max_params_ratio:
-                    print(f"⚠️ Skipped: {model.count_params()} params > {int(x_train.shape[0] * max_params_ratio)} allowed.")
-                    val_loss = 1e6
-                    r2 = -10
-                else:
-                    # Train the model using the training set and evaluate on the validation set.
-                    history_optimise = model.fit(
-                        x_train, y_train,
-                        validation_data=(x_valid, y_valid),
-                        epochs=epochs,
-                        batch_size=32,
-                        callbacks=[early_stop],
-                        verbose=0 # set to 0 for tuning so that training output isn't printed each time
+    def make_objective(kf, x_data, y_data):
+        @sku.use_named_args(dimensions=space_model)
+        def objective(lr, epochs, layers, hidden_units, taper_rate, dropout_rate, l2_factor):
+            val_losses = []
+            val_r2s = []
+            try:
+                for train_idx, val_idx in kf.split(x_data):
+                    # Clear previous session to free memory
+                    K.clear_session()
+                    
+                    x_train, x_valid = x_data[train_idx], x_data[val_idx]
+                    y_train, y_valid = y_data[train_idx], y_data[val_idx]
+                    
+                    
+                    model = build_model(
+                        input_dim=x_train.shape[1],
+                        hidden_units = tapered_layers(hidden_units, taper_rate, layers),
+                        #activation='relu',
+                        lr=lr,
+                        use_adjusted_softmax=use_adjusted_softmax,
+                        use_threshold_activation=use_threshold_activation,
+                        use_normalized_relu=use_normalized_relu,
+                        final_activation=final_activation,
+                        dropout_rate=dropout_rate,
+                        l2_factor=l2_factor,
+                        output_width=y_train.shape[1]
                     )
                     
-                    # Evaluate the model on the validation set (taking an average on the last 10 points).
-                    val_loss = np.mean(history_optimise.history['val_loss'][-20:])
+                    if model.count_params() > x_train.shape[0] * max_params_ratio:
+                        print(f"⚠️ Skipped: {model.count_params()} params > {int(x_train.shape[0] * max_params_ratio)} allowed.")
+                        val_loss = 1e6
+                        r2 = -10
+                    else:
+                        # Train the model using the training set and evaluate on the validation set.
+                        history_optimise = model.fit(
+                            x_train, y_train,
+                            validation_data=(x_valid, y_valid),
+                            epochs=epochs,
+                            batch_size=32,
+                            callbacks=[early_stop],
+                            verbose=0 # set to 0 for tuning so that training output isn't printed each time
+                        )
+                        
+                        # Evaluate the model on the validation set (taking an average on the last 10 points).
+                        val_loss = np.mean(history_optimise.history['val_loss'][-20:])
+                        
+                        # Compute R^2 on the validation set.
+                        y_pred = model.predict(x_valid)
+                        r2 = r2_score(y_valid,y_pred)
+                        
+                    val_losses.append(val_loss)
+                    val_r2s.append(r2)
                     
-                    # Compute R^2 on the validation set.
-                    y_pred = model.predict(x_valid)
-                    r2 = r2_score(y_valid,y_pred)
+                    K.clear_session()
+                    del model
+                    gc.collect()
+                    
+                avg_val_loss = np.mean(val_losses)
+                avg_r2 = np.mean(val_r2s)
                 
-                val_losses.append(val_loss)
-                val_r2s.append(r2)
-            
-            avg_val_loss = np.mean(val_losses)
-            avg_r2 = np.mean(val_r2s)
-            
-            # Set a lambda (penalty weight) for combining metrics.
-            lambda_r2 = 2.0 # Weight on the (1-R^2) term
-            r2_threshold=0.85
-            penalty_r2 = lambda_r2 * max(0.0,(r2_threshold - avg_r2))
-            
-            # Overall objective: lower is better, we want low loss and high R2.
-            objective_value = avg_val_loss + penalty_r2 #+ penalty_diff + penalty_var
-            
-            print(f"Evaluated: lr = {lr:.2e}, epochs = {epochs}, layers = {layers}, hidden units = {hidden_units},")
-            print(f"           taper rate = {taper_rate:.3f}, dropout rate = {dropout_rate:.3f}")
-            print(f"    => val loss = {avg_val_loss:.4e}, R2 = {avg_r2:.4f}, objective = {objective_value:.4e}")
-            
-            # Return the validation loss as the objective.
-            return objective_value
-            
-        except Exception as e:
-            print(f"⚠️  Error during trial with lr={lr:.1e}, epochs={epochs}, hidden_units={hidden_units}: {e}")
-            return 1e6  # Large penalty to avoid choosing this combination
-        
-        finally:
-            # Clean up to reduce memory usage
-            try:
-                del model
-                del history_optimise
-            except NameError:
-                pass
-            gc.collect()
-            K.clear_session()
-    
+                # Set a lambda (penalty weight) for combining metrics.
+                lambda_r2 = 2.0 # Weight on the (1-R^2) term
+                r2_threshold=0.85
+                penalty_r2 = lambda_r2 * max(0.0,(r2_threshold - avg_r2))
+                
+                # Overall objective: lower is better, we want low loss and high R2.
+                objective_value = avg_val_loss + penalty_r2 #+ penalty_diff + penalty_var
+                
+                print(f"Evaluated: lr = {lr:.2e}, epochs = {epochs}, layers = {layers}, hidden units = {hidden_units},")
+                print(f"           taper rate = {taper_rate:.3f}, dropout rate = {dropout_rate:.3f}")
+                print(f"    => val loss = {avg_val_loss:.4e}, R2 = {avg_r2:.4f}, objective = {objective_value:.4e}")
+                
+                # Return the validation loss as the objective.
+                return objective_value
+                
+            except Exception as e:
+                print(f"⚠️  Error during trial with lr={lr:.1e}, epochs={epochs}, hidden_units={hidden_units}: {e}")
+                return 1e6  # Large penalty to avoid choosing this combination
+        return objective
     
     res_out = None
     best_fun = float("inf")
@@ -157,6 +144,9 @@ def optimise_parameters(x_data,y_data,x_test,y_test,
         K.clear_session()
         gc.collect()
         
+        kf = KFold(n_splits=n_splits, shuffle=True, random_state=42+i)
+        objective = make_objective(kf, x_data, y_data)
+        
         result = gp_minimize(
             func=objective,
             dimensions=space_model,
@@ -164,7 +154,7 @@ def optimise_parameters(x_data,y_data,x_test,y_test,
             n_calls=num_op,
             acq_func='gp_hedge',#EI or LCB
             noise="gaussian",#1e-6,
-            random_state=42+i,
+            #random_state=42+i, # uncomment if we want it repeatable
             callback=[print_progress]
         )
         

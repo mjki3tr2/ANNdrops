@@ -7,6 +7,7 @@ def build_model(
         use_threshold_activation=False,
         use_normalized_relu=False,
         final_activation='linear',
+        threshold=0.1,
         dropout_rate=0.1,
         l2_factor=0.001,
         output_width=1,
@@ -35,10 +36,10 @@ def build_model(
     
     if use_adjusted_softmax:
         raw_outputs = Dense(output_width, name="Raw_Output_Layer")(x)
-        final_outputs = AdjustedSoftmax(threshold=0.1, name='Softmax_Layer_Threshold_of_0.1')(raw_outputs)
+        final_outputs = AdjustedSoftmax(threshold=threshold, name=f'Softmax_Layer_Threshold_of_{threshold}')(raw_outputs)
     elif use_threshold_activation:
         raw_outputs = Dense(output_width, name="Raw_Output_Laye")(x)
-        final_outputs = ThresholdActivation(threshold=0.1, name="Threshold_of_0.1")(raw_outputs)
+        final_outputs = ThresholdActivation(threshold=threshold, name=f"Threshold_of_{threshold}")(raw_outputs)
     elif use_normalized_relu:
         raw_outputs = Dense(output_width,activation='relu', name="Raw_relu_Output_Layer")(x)
         final_outputs = NormalizedReLU(use_uniform_fallback=False, name="Normalizing_Layer")(raw_outputs)

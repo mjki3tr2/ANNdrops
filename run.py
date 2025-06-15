@@ -61,6 +61,8 @@ run_s=False
 xs_min=0.2
 xs_max=1.3
 
+rng = np.random.RandomState() # Replace with 42 to get repeatable splits.
+
 """
 Initial Setup
 """
@@ -109,13 +111,13 @@ Undertake the volume fraction fits
 if run_f:
     # split the data into test, and the data for the K-fold
     Xf_data, Xf_test, yf_data, yf_test, idx_f_data, idx_f_test = train_test_split(
-        X_f_scaled,y_f,indices_f,test_size=test_fraction,random_state=123
+        X_f_scaled,y_f,indices_f,test_size=test_fraction,random_state=rng
     )
     
     # undertake optimisation of the model for the volume fraction
     print("Running Volume Fraction Optimisation")
     volfrac_info = optimise_parameters(Xf_data,yf_data,Xf_test,yf_test,space_model,'normalized_relu',n_runs,num_optimise,num_initial,n_splits,max_params_ratio)
-    final_model_f, history_volfrac_final = train_model(Xf_data,yf_data,Xf_test,yf_test,'normalized_relu',volfrac_info)
+    final_model_f, history_volfrac_final = train_model(Xf_data,yf_data,Xf_test,yf_test,'normalized_relu',volfrac_info,'Volume_Fraction_Model')
     final_model_f.save("volume_fraction_model.keras")
     
     # look at the model
@@ -142,11 +144,11 @@ if run_Mo:
     print("Running Mo1 Optimisation")
     # undertake optimisation of Mo1 model
     XMo1_data, XMo1_test, yMo1_data, yMo1_test, idx_Mo1_data, idx_Mo1_test = train_test_split(
-        X_1_scaled,y_Mo1_scaled,indices_1,test_size=test_fraction,random_state=123
+        X_1_scaled,y_Mo1_scaled,indices_1,test_size=test_fraction,random_state=rng
     )
     
     Mo1_info = optimise_parameters(XMo1_data,yMo1_data,XMo1_test,yMo1_test,space_model,'linear',n_runs,num_optimise,num_initial,n_splits,max_params_ratio)
-    final_model_Mo1, history_Mo1_final = train_model(XMo1_data,yMo1_data,XMo1_test,yMo1_test,'linear',Mo1_info)
+    final_model_Mo1, history_Mo1_final = train_model(XMo1_data,yMo1_data,XMo1_test,yMo1_test,'linear',Mo1_info,'Mo1_Model')
     final_model_Mo1.save("Mo1_model.keras")
     
     # look at the model
@@ -166,18 +168,13 @@ if run_Mo:
     # plot the training history graph
     plot_training_history(history_Mo1_final, title=r'Mo$_1$ Model Training History',save_path='plots/Mo1_model_training.png')
     
-    # undertake optimisation of Mo1 model
-    XMo1_data, XMo1_test, yMo1_data, yMo1_test, idx_Mo1_data, idx_Mo1_test = train_test_split(
-        X_1_scaled,y_Mo1_scaled,indices_1,test_size=test_fraction,random_state=123
-    )
-    
     print("Running Mo2 Optimisation")
     XMo2_data, XMo2_test, yMo2_data, yMo2_test, idx_Mo2_data, idx_Mo2_test = train_test_split(
-        X_2_scaled,y_Mo2_scaled,indices_2,test_size=test_fraction,random_state=123
+        X_2_scaled,y_Mo2_scaled,indices_2,test_size=test_fraction,random_state=rng
     )
     
     Mo2_info = optimise_parameters(XMo2_data,yMo2_data,XMo2_test,yMo2_test,space_model,'linear',n_runs,num_optimise,num_initial,n_splits,max_params_ratio)
-    final_model_Mo2, history_Mo2_final = train_model(XMo2_data,yMo2_data,XMo2_test,yMo2_test,'linear',Mo2_info)
+    final_model_Mo2, history_Mo2_final = train_model(XMo2_data,yMo2_data,XMo2_test,yMo2_test,'linear',Mo2_info,'Mo2_Model')
     final_model_Mo2.save("Mo2_model.keras")
     
     # look at the model
@@ -197,18 +194,13 @@ if run_Mo:
     # plot the training history graph
     plot_training_history(history_Mo2_final, title=r'Mo$_2$ Model Training History',save_path='plots/Mo2_model_training.png')
     
-    # undertake optimisation of Mo2 model
-    XMo2_data, XMo2_test, yMo2_data, yMo2_test, idx_Mo2_data, idx_Mo2_test = train_test_split(
-        X_2_scaled,y_Mo2_scaled,indices_2,test_size=test_fraction,random_state=123
-    )
-    
     print("Running Mo3 Optimisation")
     XMo3_data, XMo3_test, yMo3_data, yMo3_test, idx_Mo3_data, idx_Mo3_test = train_test_split(
-        X_3_scaled,y_Mo3_scaled,indices_3,test_size=test_fraction,random_state=123
+        X_3_scaled,y_Mo3_scaled,indices_3,test_size=test_fraction,random_state=rng
     )
     
     Mo3_info = optimise_parameters(XMo3_data,yMo3_data,XMo3_test,yMo3_test,space_model,'linear',n_runs,num_optimise,num_initial,n_splits,max_params_ratio)
-    final_model_Mo3, history_Mo3_final = train_model(XMo3_data,yMo3_data,XMo3_test,yMo3_test,'linear',Mo3_info)
+    final_model_Mo3, history_Mo3_final = train_model(XMo3_data,yMo3_data,XMo3_test,yMo3_test,'linear',Mo3_info,'Mo3_Model')
     final_model_Mo3.save("Mo1_model.keras")
     
     # look at the model
@@ -235,11 +227,11 @@ if run_s:
     # undertake optimisation of the s1 model
     print("Running s1 Optimisation")
     Xs1_data, Xs1_test, ys1_data, ys1_test, idx_s1_data, idx_s1_test = train_test_split(
-        X_1_scaled,y_s1_scaled,indices_1,test_size=test_fraction,random_state=123
+        X_1_scaled,y_s1_scaled,indices_1,test_size=test_fraction,random_state=rng
     )
     
     s1_info = optimise_parameters(Xs1_data,ys1_data,Xs1_test,ys1_test,space_model,'linear',n_runs,num_optimise,num_initial,n_splits,max_params_ratio)
-    final_model_s1, history_s1_final = train_model(Xs1_data,ys1_data,Xs1_test,ys1_test,'linear',s1_info)
+    final_model_s1, history_s1_final = train_model(Xs1_data,ys1_data,Xs1_test,ys1_test,'linear',s1_info,'s1_Model')
     final_model_s1.save("s1_model.keras")
     
     # look at the model
@@ -262,11 +254,11 @@ if run_s:
     # undertake optimisation of the s2 model
     print("Running s2 Optimisation")
     Xs2_data, Xs2_test, ys2_data, ys2_test, idx_s2_data, idx_s2_test = train_test_split(
-        X_2_scaled,y_s2_scaled,indices_2,test_size=test_fraction,random_state=123
+        X_2_scaled,y_s2_scaled,indices_2,test_size=test_fraction,random_state=rng
     )
     
     s2_info = optimise_parameters(Xs2_data,ys2_data,Xs2_test,ys2_test,space_model,'linear',n_runs,num_optimise,num_initial,n_splits,max_params_ratio)
-    final_model_s2, history_s2_final = train_model(Xs2_data,ys2_data,Xs2_test,ys2_test,'linear',s2_info)
+    final_model_s2, history_s2_final = train_model(Xs2_data,ys2_data,Xs2_test,ys2_test,'linear',s2_info,'s2_Model')
     final_model_s2.save("s2_model.keras")
     
     # look at the model
@@ -289,11 +281,11 @@ if run_s:
     # undertake optimisation of the s3 model
     print("Running s3 Optimisation")
     Xs3_data, Xs3_test, ys3_data, ys3_test, idx_s3_data, idx_s3_test = train_test_split(
-        X_3_scaled,y_s3_scaled,indices_3,test_size=test_fraction,random_state=123
+        X_3_scaled,y_s3_scaled,indices_3,test_size=test_fraction,random_state=rng
     )
     
     s3_info = optimise_parameters(Xs3_data,ys3_data,Xs3_test,ys3_test,space_model,'linear',n_runs,num_optimise,num_initial,n_splits,max_params_ratio)
-    final_model_s3, history_s3_final = train_model(Xs3_data,ys3_data,Xs3_test,ys3_test,'linear',s3_info)
+    final_model_s3, history_s3_final = train_model(Xs3_data,ys3_data,Xs3_test,ys3_test,'linear',s3_info,'s3_Model')
     final_model_s3.save("s3_model.keras")
     
     # look at the model

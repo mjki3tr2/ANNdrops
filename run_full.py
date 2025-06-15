@@ -51,6 +51,8 @@ xDSD_max=0.2
 xd32_min=1
 xd32_max=1000
 
+rng = np.random.RandomState() # Replace with 42 to get repeatable splits.
+
 """
 Initial Setup
 """
@@ -94,7 +96,7 @@ Undertake the model fitting
 """
 # split the data into test, and the data for the K-fold
 XDSD_data, XDSD_test, yDSD_data, yDSD_test, idx_DSD_data, idx_DSD_test = train_test_split(
-    X_DSD_scaled,y_DSD_scaled,indices_DSD,test_size=test_fraction,random_state=123)
+    X_DSD_scaled,y_DSD_scaled,indices_DSD,test_size=test_fraction,random_state=rng)
 
 # undertake optimisation of the model for the volume fraction
 print("Running DSD Optimisation")

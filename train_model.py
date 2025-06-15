@@ -1,5 +1,6 @@
 def train_model(x_data,y_data,x_test,y_test,
-                    final_activation,res_out):
+                    final_activation,res_out,
+                    model_name='Model'):
     
     from sklearn.metrics import mean_absolute_error
     from sklearn.metrics import r2_score
@@ -51,7 +52,8 @@ def train_model(x_data,y_data,x_test,y_test,
         final_activation=final_activation,
         dropout_rate=best_dropout,
         l2_factor=best_l2,
-        output_width=y_data.shape[1]
+        output_width=y_data.shape[1],
+        model_name=model_name
     )
     
     history_final = final_model.fit(

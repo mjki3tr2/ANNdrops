@@ -47,6 +47,8 @@ max_params_ratio = 100.0 # ratio of max number of parameters to number of sample
 xd32_min=1
 xd32_max=1000
 
+rng = np.random.RandomState() # Replace with 42 to get repeatable splits.
+
 """
 Initial Setup
 """
@@ -78,7 +80,7 @@ Undertake the d32 fits
 """
 # split the data into test, and the data for the K-fold
 Xd32_data, Xd32_test, yd32_data, yd32_test, idx_d32_data, idx_d32_test = train_test_split(
-    X_d32_scaled,y_d32_scaled,indices_d32,test_size=test_fraction,random_state=123
+    X_d32_scaled,y_d32_scaled,indices_d32,test_size=test_fraction,random_state=rng
 )
 
 # undertake optimisation of the model for the d32's
