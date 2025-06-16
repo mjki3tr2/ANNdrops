@@ -26,9 +26,9 @@ def plot_outputs(y_true_data,y_true_test,
     
     # Determine the full range for plotting from the combined true values.
     if (not x_min):
-        x_min = y_true_all.min()
+        x_min = min(np.min(y_true_all), np.min(y_pred_all))
     if (not x_max):
-        x_max = y_true_all.max()
+        x_max = max(np.max(y_true_all), np.max(y_pred_all))
     x_line = np.linspace(x_min, x_max, 100)
     
     plt.rcParams.update({'font.size': 14})

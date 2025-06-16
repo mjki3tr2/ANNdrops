@@ -38,8 +38,8 @@ test_fraction = 0.1
 #'normalized_relu' - make sure the sum is 1 by normalisation
 
 n_runs = 1 # minimisation loops
-num_optimise = 70 # number of minimisaion steps
-num_initial = 20 # number of initial mapping guesses
+num_optimise = 4 # number of minimisaion steps
+num_initial = 2 # number of initial mapping guesses
 n_splits = 5 # number of K-fold sections
 space_model = [
     Real(1e-5, 1e-2,name='lr', prior='log-uniform'),
@@ -60,6 +60,9 @@ xMo_max=1000
 run_s=False
 xs_min=0.2
 xs_max=1.3
+
+train_min=1E-2
+train_max=1
 
 rng = np.random.RandomState() # Replace with 42 to get repeatable splits.
 
@@ -135,7 +138,7 @@ if run_f:
     plot_outputs(yf_data[:, 2],yf_test[:, 2],yf_pred_data[:, 2],yf_pred_test[:, 2],idx_f_data,idx_f_test,r'Plot for $f_3$',log=False, maerun=True,x_min=0,x_max=1,save_path='plots/f3.png')
     
     # plot the training history graph
-    plot_training_history(history_volfrac_final, title=r'$f$ Model Training History',save_path='plots/f_model_training.png')
+    plot_training_history(history_volfrac_final, title=r'$f$ Model Training History', y_min=train_min, y_max=train_max, save_path='plots/f_model_training.png')
 
 """
 Undertake the Mo fits
@@ -166,7 +169,7 @@ if run_Mo:
     plot_outputs(yMo1_data,yMo1_test,yMo1_pred_data,yMo1_pred_test,idx_Mo1_data,idx_Mo1_test,r'Plot for Mo$_1$',log=True, maerun=False, x_min=xMo_min, x_max=xMo_max, save_path='plots/Mo1.png')
     
     # plot the training history graph
-    plot_training_history(history_Mo1_final, title=r'Mo$_1$ Model Training History',save_path='plots/Mo1_model_training.png')
+    plot_training_history(history_Mo1_final, title=r'Mo$_1$ Model Training History', y_min=train_min, y_max=train_max, save_path='plots/Mo1_model_training.png')
     
     print("Running Mo2 Optimisation")
     XMo2_data, XMo2_test, yMo2_data, yMo2_test, idx_Mo2_data, idx_Mo2_test = train_test_split(
@@ -192,7 +195,7 @@ if run_Mo:
     plot_outputs(yMo2_data,yMo2_test,yMo2_pred_data,yMo2_pred_test,idx_Mo2_data,idx_Mo2_test,r'Plot for Mo$_2$',log=True, maerun=False, x_min=xMo_min, x_max=xMo_max, save_path='plots/Mo2.png')
     
     # plot the training history graph
-    plot_training_history(history_Mo2_final, title=r'Mo$_2$ Model Training History',save_path='plots/Mo2_model_training.png')
+    plot_training_history(history_Mo2_final, title=r'Mo$_2$ Model Training History', y_min=train_min, y_max=train_max, save_path='plots/Mo2_model_training.png')
     
     print("Running Mo3 Optimisation")
     XMo3_data, XMo3_test, yMo3_data, yMo3_test, idx_Mo3_data, idx_Mo3_test = train_test_split(
@@ -201,7 +204,7 @@ if run_Mo:
     
     Mo3_info = optimise_parameters(XMo3_data,yMo3_data,XMo3_test,yMo3_test,space_model,'linear',n_runs,num_optimise,num_initial,n_splits,max_params_ratio)
     final_model_Mo3, history_Mo3_final = train_model(XMo3_data,yMo3_data,XMo3_test,yMo3_test,'linear',Mo3_info,'Mo3_Model')
-    final_model_Mo3.save("Mo3_model.keras")
+    final_model_Mo3.save("Mo1_model.keras")
     
     # look at the model
     final_model_Mo3.summary()
@@ -218,7 +221,7 @@ if run_Mo:
     plot_outputs(yMo3_data,yMo3_test,yMo3_pred_data,yMo3_pred_test,idx_Mo3_data,idx_Mo3_test,r'Plot for Mo$_3$',log=True, maerun=False, x_min=xMo_min, x_max=xMo_max, save_path='plots/Mo3.png')
     
     # plot the training history graph
-    plot_training_history(history_Mo3_final, title=r'Mo$_3$ Model Training History',save_path='plots/Mo3_model_training.png')
+    plot_training_history(history_Mo3_final, title=r'Mo$_3$ Model Training History', y_min=train_min, y_max=train_max, save_path='plots/Mo3_model_training.png')
     
 """
 Undertake the s fits
@@ -249,7 +252,7 @@ if run_s:
     plot_outputs(ys1_data,ys1_test,ys1_pred_data,ys1_pred_test,idx_s1_data,idx_s1_test,r'Plot for $\sigma_1$',log=False, maerun=False, x_min=xs_min, x_max=xs_max, save_path='plots/s1.png')
     
     # plot the training history graph
-    plot_training_history(history_s1_final, title=r'$\sigma_1$ Model Training History',save_path='plots/s1_model_training.png')
+    plot_training_history(history_s1_final, title=r'$\sigma_1$ Model Training History', y_min=train_min, y_max=train_max, save_path='plots/s1_model_training.png')
     
     # undertake optimisation of the s2 model
     print("Running s2 Optimisation")
@@ -276,7 +279,7 @@ if run_s:
     plot_outputs(ys2_data,ys2_test,ys2_pred_data,ys2_pred_test,idx_s2_data,idx_s2_test,r'Plot for $\sigma_2$',log=False, maerun=False, x_min=xs_min, x_max=xs_max, save_path='plots/s2.png')
     
     # plot the training history graph
-    plot_training_history(history_s2_final, title=r'$\sigma_2$ Model Training History',save_path='plots/s2_model_training.png')
+    plot_training_history(history_s2_final, title=r'$\sigma_2$ Model Training History', y_min=train_min, y_max=train_max, save_path='plots/s2_model_training.png')
     
     # undertake optimisation of the s3 model
     print("Running s3 Optimisation")
@@ -303,4 +306,4 @@ if run_s:
     plot_outputs(ys3_data,ys3_test,ys3_pred_data,ys3_pred_test,idx_s3_data,idx_s3_test,r'Plot for $\sigma_3$',log=False, maerun=False, x_min=xs_min, x_max=xs_max, save_path='plots/s3.png')
     
     # plot the training history graph
-    plot_training_history(history_s3_final, title=r'$\sigma_3$ Model Training History',save_path='plots/s3_model_training.png')
+    plot_training_history(history_s3_final, title=r'$\sigma_3$ Model Training History', y_min=train_min, y_max=train_max, save_path='plots/s3_model_training.png')
