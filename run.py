@@ -201,7 +201,7 @@ if run_Mo:
     
     Mo3_info = optimise_parameters(XMo3_data,yMo3_data,XMo3_test,yMo3_test,space_model,'linear',n_runs,num_optimise,num_initial,n_splits,max_params_ratio)
     final_model_Mo3, history_Mo3_final = train_model(XMo3_data,yMo3_data,XMo3_test,yMo3_test,'linear',Mo3_info,'Mo3_Model')
-    final_model_Mo3.save("Mo1_model.keras")
+    final_model_Mo3.save("Mo3_model.keras")
     
     # look at the model
     final_model_Mo3.summary()
