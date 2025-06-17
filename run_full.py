@@ -113,7 +113,7 @@ os.makedirs("plots", exist_ok=True)
 plot_model(final_model_DSD, to_file='plots/model_DSD.png', show_shapes=True, show_layer_names=True)
 
 # plot the training history graph
-plot_training_history(history_DSD_final, title=r'DSD Model Training History', y_min=train_min, y_max_train_max, save_path='plots/DSD_model_training.png')
+plot_training_history(history_DSD_final, title=r'DSD Model Training History', y_min=train_min, y_max=train_max, save_path='plots/DSD_model_training.png')
 
 # Get predictions for each split
 yDSD_pred_data = predict_and_inverse(final_model_DSD, XDSD_data, scaler_y_DSD)
