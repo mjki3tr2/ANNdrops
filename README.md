@@ -12,3 +12,9 @@ run_d32_model.py is the same as run.py, but only fits the ANN model for the d32s
 run_full.py is the same as run.py, but takes the whole distribution and fits each point in it directly with an ANN.
 
 All other files are functions called by these master files.
+
+This code has been ran on:
+python=3.10.10
+pip install tensorflow pandas scikit-learn scipy numpy matplotlib scikit-optimize mglearn keras graphvis pydot palettable
+
+NB. graphvis, pydot, and palettable are only used to visualize the final model so can be ignored if you don't want to plot the ANNs 
