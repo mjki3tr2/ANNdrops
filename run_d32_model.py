@@ -47,6 +47,9 @@ max_params_ratio = 100.0 # ratio of max number of parameters to number of sample
 xd32_min=1
 xd32_max=1000
 
+train_min=1E-2
+train_max=1
+
 rng = np.random.RandomState() # Replace with 42 to get repeatable splits.
 
 """
@@ -95,7 +98,7 @@ os.makedirs("plots", exist_ok=True)
 plot_model(final_model_d32, to_file='plots/model_d32.png', show_shapes=True, show_layer_names=True)
 
 # plot the training history graph
-plot_training_history(history_d32_final, title=r'$d_{32}$ Model Training History',save_path='plots/d32_model_training.png')
+plot_training_history(history_d32_final, title=r'$d_{32}$ Model Training History', y_min=train_min, y_max=train_max, save_path='plots/d32_model_training.png')
 
 # Get predictions for each split
 yd32_pred_data = predict_and_inverse(final_model_d32, Xd32_data, scaler_y_d32, exp=True)
