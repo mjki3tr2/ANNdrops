@@ -51,9 +51,6 @@ xDSD_max=0.2
 xd32_min=1
 xd32_max=1000
 
-train_min=1E-2
-train_max=1
-
 rng = np.random.RandomState() # Replace with 42 to get repeatable splits.
 
 """
@@ -113,7 +110,7 @@ os.makedirs("plots", exist_ok=True)
 plot_model(final_model_DSD, to_file='plots/model_DSD.png', show_shapes=True, show_layer_names=True)
 
 # plot the training history graph
-plot_training_history(history_DSD_final, title=r'DSD Model Training History', y_min=train_min, y_max=train_max, save_path='plots/DSD_model_training.png')
+plot_training_history(history_DSD_final, title=r'DSD Model Training History',save_path='plots/DSD_model_training.png')
 
 # Get predictions for each split
 yDSD_pred_data = predict_and_inverse(final_model_DSD, XDSD_data, scaler_y_DSD)
@@ -122,7 +119,7 @@ yDSD_data = scaler_y_DSD.inverse_transform(yDSD_data)
 yDSD_test = scaler_y_DSD.inverse_transform(yDSD_test)
 
 # plot the fraction output values
-plot_outputs(yDSD_data,yDSD_test,yDSD_pred_data,yDSD_pred_test,idx_DSD_data,idx_DSD_test,r'Plot for DSD points', log=False, maerun=True, x_min=xDSD_min, x_max=xDSD_max, save_path='plots/DSDmodel.png')
+plot_outputs(yDSD_data,yDSD_test,yDSD_pred_data,yDSD_pred_test,idx_DSD_data,idx_DSD_test,r'Plot for DSD points',log=True, maerun=False, x_min=xDSD_min, x_max=xDSD_max, save_path='plots/DSDmodel.png')
 
 # Re-run on the whole input to get the DSDs
 y_DSD_pred = predict_and_inverse(final_model_DSD, X_DSD_scaled, scaler_y_DSD)

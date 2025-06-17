@@ -1,4 +1,4 @@
-def visualize_model(model,filename=None):
+def visualize_model(model,filename=None,input_labels=None,output_labels=None):
     import VisualizeNN as VisNN
     import numpy as np
     
@@ -11,5 +11,5 @@ def visualize_model(model,filename=None):
             weights.append(layer.get_weights()[0])
 
     network = VisNN.DrawNN(np.array(network_structure), weights)
-    network.draw(filename=filename)
+    network.draw(filename=filename, ilabels=input_labels, olabels=output_labels)
     return network

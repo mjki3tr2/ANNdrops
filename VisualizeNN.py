@@ -2,6 +2,8 @@
 # Which in turn was based on the work by Milo Spencer-Harper and Oli Blum, https://stackoverflow.com/a/37366154/10404826
 # Note that the original file was added to Github under a GPL-3.0 license
 
+import matplotlib
+matplotlib.rcParams['mathtext.fontset'] = 'stix'  # or 'stixsanserif'
 from matplotlib import pyplot
 from math import cos, sin, atan
 from palettable.tableau import Tableau_10
@@ -13,10 +15,13 @@ class Neuron():
         self.x = x
         self.y = y
 
-    def draw(self, neuron_radius, id=-1):
+    def draw(self, neuron_radius, id=None, label=None, label_offset=0.7):
         circle = pyplot.Circle((self.x, self.y), radius=neuron_radius, fill=False)
         pyplot.gca().add_patch(circle)
-        pyplot.gca().text(self.x, self.y-0.15, str(id), size=10, ha='center')
+        if label:
+            pyplot.text(self.x, self.y + label_offset, label, size=10, ha='center',fontname='Times New Roman')
+        elif id is not None:
+            pyplot.gca().text(self.x, self.y-0.15, str(id), size=10, ha='center',fontname='Times New Roman')
 
 class Layer():
     def __init__(self, network, number_of_neurons, number_of_neurons_in_widest_layer):
@@ -63,15 +68,16 @@ class Layer():
 
         # assign different linewidths to lines depending on the size of the weight
         abs_weight = abs(weight)        
-        if abs_weight > 0.5: 
-            linewidth = 10*abs_weight
-        elif abs_weight > 0.8: 
-            linewidth =  100*abs_weight
-        else:
-            linewidth = abs_weight
+        linewidth = 4 * np.log1p(abs_weight)
+        #if abs_weight > 0.5: 
+        #    linewidth = 10*abs_weight
+        #elif abs_weight > 0.8: 
+        #    linewidth =  100*abs_weight
+        #else:
+        #    linewidth = abs_weight
 
         # draw the weights and adjust the labels of weights to avoid overlapping
-        if abs_weight > 0.5: 
+        if abs_weight > 1:#0.5: 
             # while loop to determine the optimal locaton for text lables to avoid overlapping
             index_step = 2
             num_segments = 10   
@@ -83,18 +89,23 @@ class Layer():
                 txt_y_pos = neuron1.y - y_adjustment+index_step*(neuron2.y-neuron1.y+2*y_adjustment)/num_segments
 
             # print("Label positions: ", "{:.2f}".format(txt_x_pos), "{:.2f}".format(txt_y_pos), "{:3.2f}".format(weight))
-            a=pyplot.gca().text(txt_x_pos, txt_y_pos, "{:3.2f}".format(weight), size=8, ha='center')
+            a=pyplot.gca().text(txt_x_pos, txt_y_pos, "{:3.2f}".format(weight), size=6, ha='center')
             a.set_bbox(dict(facecolor='white', alpha=0))
             # print(a.get_bbox_patch().get_height())
 
         line = pyplot.Line2D((neuron1.x - x_adjustment, neuron2.x + x_adjustment), (neuron1.y - y_adjustment, neuron2.y + y_adjustment), linewidth=linewidth, color=color)
         pyplot.gca().add_line(line)
 
-    def draw(self, layerType=0, weights=None, textoverlaphandler=None):
+    def draw(self, layerType=0, weights=None, textoverlaphandler=None, labels=None):
         j=0 # index for neurons in this layer
         for neuron in self.neurons:            
             i=0 # index for neurons in previous layer
-            neuron.draw( self.neuron_radius, id=j+1 )
+            if layerType == 0 and labels:
+                neuron.draw(self.neuron_radius, label=labels[j], label_offset=-1.05)
+            elif layerType == -1 and labels:
+                neuron.draw(self.neuron_radius, label=labels[j])
+            else:
+                neuron.draw( self.neuron_radius, id=j+1 )
             if self.previous_layer:
                 for previous_layer_neuron in self.previous_layer.neurons:
                     self.__line_between_two_neurons(neuron, previous_layer_neuron, weights[i,j], textoverlaphandler)
@@ -146,7 +157,7 @@ class NeuralNetwork():
         layer = Layer(self, number_of_neurons, self.number_of_neurons_in_widest_layer)
         self.layers.append(layer)
 
-    def draw(self, weights_list=None, filename=None, figsize=None):
+    def draw(self, weights_list=None, filename=None, figsize=None, ilabels=None, olabels=None):
         # vertical_distance_between_layers and horizontal_distance_between_neurons are the same with the variables of the same name in layer class
         vertical_distance_between_layers = 6
         horizontal_distance_between_neurons = 2
@@ -160,9 +171,9 @@ class NeuralNetwork():
         for i in range( len(self.layers) ):
             layer = self.layers[i]                                
             if i == 0:
-                layer.draw( layerType=0 )
+                layer.draw( layerType=0, labels=ilabels)
             elif i == len(self.layers)-1:
-                layer.draw( layerType=-1, weights=weights_list[i-1], textoverlaphandler=overlaphandler)
+                layer.draw( layerType=-1, weights=weights_list[i-1], textoverlaphandler=overlaphandler, labels=olabels)
             else:
                 layer.draw( layerType=i, weights=weights_list[i-1], textoverlaphandler=overlaphandler)
 
@@ -191,7 +202,7 @@ class DrawNN():
                 weights_list.append(tempArr)
             self.weights_list = weights_list
         
-    def draw( self , filename=None, figsize=None):
+    def draw( self , filename=None, figsize=None, ilabels=None, olabels=None):
         widest_layer = max( self.neural_network )
         network = NeuralNetwork( widest_layer )
         for l in self.neural_network:
@@ -201,4 +212,4 @@ class DrawNN():
             # height grows with number of layers
             height = len(self.neural_network) * 2
             figsize = (max(6, width), max(6, height))
-        network.draw(self.weights_list, filename = filename, figsize = figsize)
+        network.draw(self.weights_list, filename = filename, figsize = figsize, ilabels=ilabels, olabels=olabels)
