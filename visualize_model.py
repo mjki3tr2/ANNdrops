@@ -6,7 +6,7 @@ def visualize_model(model,filename=None,input_labels=None,output_labels=None):
     weights = []
 
     for layer in model.layers:
-        if 'dense' in layer.name:
+        if 'Dense' in layer.name or 'Output' in layer.name:
             network_structure.append(layer.units)
             weights.append(layer.get_weights()[0])
 
