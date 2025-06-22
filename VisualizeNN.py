@@ -25,7 +25,7 @@ class Neuron():
 
 class Layer():
     def __init__(self, network, number_of_neurons, number_of_neurons_in_widest_layer):
-        self.vertical_distance_between_layers = 6
+        self.vertical_distance_between_layers = 10
         self.horizontal_distance_between_neurons = 2
         self.neuron_radius = 0.5
         self.number_of_neurons_in_widest_layer = number_of_neurons_in_widest_layer
@@ -68,16 +68,17 @@ class Layer():
 
         # assign different linewidths to lines depending on the size of the weight
         abs_weight = abs(weight)        
-        linewidth = 4 * np.log1p(abs_weight)
-        #if abs_weight > 0.5: 
-        #    linewidth = 10*abs_weight
-        #elif abs_weight > 0.8: 
-        #    linewidth =  100*abs_weight
-        #else:
-        #    linewidth = abs_weight
-
+        if abs_weight < 0.2: 
+            linewidth = 0.01*abs_weight
+        elif abs_weight < 0.5: 
+            linewidth =  0.1*abs_weight
+        else:
+            linewidth = abs_weight
+        
+        alpha = 0.2 + 0.8 * abs_weight
+        
         # draw the weights and adjust the labels of weights to avoid overlapping
-        if abs_weight > 1:#0.5: 
+        if abs_weight > 0.8:#0.5: 
             # while loop to determine the optimal locaton for text lables to avoid overlapping
             index_step = 2
             num_segments = 10   
@@ -93,7 +94,7 @@ class Layer():
             a.set_bbox(dict(facecolor='white', alpha=0))
             # print(a.get_bbox_patch().get_height())
 
-        line = pyplot.Line2D((neuron1.x - x_adjustment, neuron2.x + x_adjustment), (neuron1.y - y_adjustment, neuron2.y + y_adjustment), linewidth=linewidth, color=color)
+        line = pyplot.Line2D((neuron1.x - x_adjustment, neuron2.x + x_adjustment), (neuron1.y - y_adjustment, neuron2.y + y_adjustment), linewidth=linewidth, alpha=alpha, color=color)
         pyplot.gca().add_line(line)
 
     def draw(self, layerType=0, weights=None, textoverlaphandler=None, labels=None):
@@ -159,7 +160,7 @@ class NeuralNetwork():
 
     def draw(self, weights_list=None, filename=None, figsize=None, ilabels=None, olabels=None):
         # vertical_distance_between_layers and horizontal_distance_between_neurons are the same with the variables of the same name in layer class
-        vertical_distance_between_layers = 6
+        vertical_distance_between_layers = 10
         horizontal_distance_between_neurons = 2
         overlaphandler = TextOverlappingHandler(\
             self.number_of_neurons_in_widest_layer*horizontal_distance_between_neurons,\
