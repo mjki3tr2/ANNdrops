@@ -71,20 +71,22 @@ final_model_f = load_model(
         'ThresholdActivation': ThresholdActivation
     }
 )
-f_network = visualize_model(final_model_f,filename='plots/f_network.png',input_labels=input_labels,output_labels=[r'$f_1$',r'$f_2$',r'$f_3$'])
+f_network, f_weights = visualize_model(final_model_f,filename='plots/f_network.png',input_labels=input_labels,output_labels=[r'$f_1$',r'$f_2$',r'$f_3$'])
+#import matplotlib.pyplot as plt
+#plt.bar(input_labels, np.sum(abs(f_weights[0]),axis=1)/np.sum(abs(f_weights[0])))
 
 final_model_Mo1 = load_model("Mo1_model.keras")
-Mo1_network = visualize_model(final_model_Mo1,filename='plots/Mo1_network.png',input_labels=input_labels,output_labels=[r'$\ln Mo_1$'])
+Mo1_network, Mo1_weights = visualize_model(final_model_Mo1,filename='plots/Mo1_network.png',input_labels=input_labels,output_labels=[r'$\ln Mo_1$'])
 final_model_Mo2 = load_model("Mo2_model.keras")
-Mo2_network = visualize_model(final_model_Mo2,filename='plots/Mo2_network.png',input_labels=input_labels,output_labels=[r'$\ln Mo_2$'])
+Mo2_network, Mo2_weights = visualize_model(final_model_Mo2,filename='plots/Mo2_network.png',input_labels=input_labels,output_labels=[r'$\ln Mo_2$'])
 final_model_Mo3 = load_model("Mo3_model.keras")
-Mo3_network = visualize_model(final_model_Mo3,filename='plots/Mo3_network.png',input_labels=input_labels,output_labels=[r'$\ln Mo_3$'])
+Mo3_network, Mo3_weights = visualize_model(final_model_Mo3,filename='plots/Mo3_network.png',input_labels=input_labels,output_labels=[r'$\ln Mo_3$'])
 final_model_s1 = load_model("s1_model.keras")
-s1_network = visualize_model(final_model_s1,filename='plots/s1_network.png',input_labels=input_labels,output_labels=[r'$s_1$'])
+s1_network, s1_weights = visualize_model(final_model_s1,filename='plots/s1_network.png',input_labels=input_labels,output_labels=[r'$s_1$'])
 final_model_s2 = load_model("s2_model.keras")
-s2_network = visualize_model(final_model_s2,filename='plots/s2_network.png',input_labels=input_labels,output_labels=[r'$s_2$'])
+s2_network, s2_weights = visualize_model(final_model_s2,filename='plots/s2_network.png',input_labels=input_labels,output_labels=[r'$s_2$'])
 final_model_s3 = load_model("s3_model.keras")
-s3_network = visualize_model(final_model_s3,filename='plots/s3_network.png',input_labels=input_labels,output_labels=[r'$s_3$'])
+s3_network, s3_weights = visualize_model(final_model_s3,filename='plots/s3_network.png',input_labels=input_labels,output_labels=[r'$s_3$'])
 
 # calculate a prediction of all the data
 yf_pred = predict_and_inverse(final_model_f, X_f_scaled)
