@@ -4,6 +4,7 @@ def plot_xy(
         title_str="Predicted vs Actual",
         xlabel_str="Actual",
         ylabel_str="Predicted",
+        index=None,
         log=True,maerun=False,
         x_min=None, x_max=None,
         save_path=None
@@ -52,7 +53,10 @@ def plot_xy(
         else:
             error = abs(y_true[i] - y_pred[i])/y_true[i]
         if error > error_threshold:
-            ax.annotate(str(int(i+1)), (y_true[i], y_pred[i]), fontsize=8, color='red')
+            if index is not None:
+                ax.annotate(str(int(index[i])), (y_true[i], y_pred[i]), fontsize=8, color='red')
+            else:
+                ax.annotate(str(int(i+1)), (y_true[i], y_pred[i]), fontsize=8, color='red')
     
     if maerun:
         ax.text(0.05, 0.95, f'Avg MAE: {mae_mean:.3f}\nR² Score: {r2:.4f}', transform=ax.transAxes, verticalalignment='top', bbox=dict(facecolor='white', alpha=0.5))
