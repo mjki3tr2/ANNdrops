@@ -136,7 +136,7 @@ d32_pred=np.zeros(len(DSD))
 for index in range(len(DSD)):
     d32_pred[index] = calc_d32(DSD_predicted[index],diameter)
 
-plot_xy(d32_exp,d32_pred,title_str=r'Plot for $d_{32}$',x_min=xd32_min, x_max=xd32_max, save_path='plots/d32DSD.png')
+plot_xy(d32_exp,d32_pred,title_str=r'Plot for $d_{32}$',index=properties[:,0],x_min=xd32_min, x_max=xd32_max, save_path='plots/d32DSD.png')
 
 #plot DSDs
 for i, index in enumerate(properties[:,0]):
