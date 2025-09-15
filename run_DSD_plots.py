@@ -120,7 +120,7 @@ for index in range(len(DSD)):
     ]
     d32_pred[index] = calc_d32(y_total_cum[index],diameter)
 
-plot_xy(d32_exp,d32_pred,title_str=r'Plot for $d_{32}$',save_path='plots/d32.png')
+plot_xy(d32_exp,d32_pred,title_str=r'Plot for $d_{32}$',index=indices_f,save_path='plots/d32.png')
 
 #plot DSDs
 for i, index in enumerate(indices_f):
